@@ -1,4 +1,4 @@
-from ConstantVariables import *
+from GameObject import *
 
 
 class MapObject:
@@ -26,38 +26,62 @@ class MapObject:
             for j in range(0, height_cells):
                 self.cells[i][j] = CellObject(self.x + self.cell_size * i, self.x + self.cell_size * j)
 
-    def get_cell(self, x, y):
-        return self.cells[x][y]
-
     def draw_field(self, tool):
         self.screen.fill(white)
 
-        end_position_x = self.x + self.cell_size * (self.width_cells + 1)
-        end_position_y = self.y + self.cell_size * (self.height_cells + 1)
         end_x = self.x + self.cell_size * self.width_cells
         end_y = self.y + self.cell_size * self.height_cells
-        for x in range(self.x, end_position_x, self.cell_size):
-            tool.line(self.screen, black, (x, self.y), (x, end_y), 1)
 
-        for y in range(self.y, end_position_y, self.cell_size):
-            tool.line(self.screen, black, (self.x, y), (end_x, y), 1)
+        for x, row in enumerate(self.cells):
+            for y, cell in enumerate(row):
+                rectangle = [
+                    cell.x,
+                    cell.y,
+                    cell.size + 1,
+                    cell.size + 1
+                ]
+                tool.rect(self.screen, black, rectangle, 1)
+
+        tool.line(self.screen, red, (self.x, self.y), (self.x, end_y), 2)
+        tool.line(self.screen, red, (self.x, self.y), (end_x, self.y), 2)
+        tool.line(self.screen, red, (end_x, self.y), (end_x, end_y), 2)
+        tool.line(self.screen, red, (end_x, end_y), (self.x, end_y), 2)
 
     def update_cells(self):
         for x, row in enumerate(self.cells):
             for y, cell in enumerate(row):
                 if not cell.is_empty():
                     map_object = cell.get_object()
-                    map_object.update_position()
+                    map_object.update()
 
     def draw_cells(self):
         for x, row in enumerate(self.cells):
             for y, cell in enumerate(row):
                 if not cell.is_empty():
                     map_object = cell.get_object()
-                    map_object.draw((cell.x, cell.y), self.cell_size)
+                    map_object.draw(self.cell_size)
+
+    def create_wall(self, point):
+        StaticObject('second', self.screen, self, point, (1, 1), brow)
+
+    def get_cell(self, x, y):
+        return self.cells[x][y]
 
     def get_cell_by_coord(self, x, y):
         pos = [int((x - self.x) / self.cell_size), int((y - self.y) / self.cell_size)]
+
+        if pos[0] >= self.width_cells:
+            pos[0] = self.width_cells - 1
+
+        if pos[1] >= self.height_cells:
+            pos[1] = self.height_cells - 1
+
+        if pos[0] < 0:
+            pos[0] = 0
+
+        if pos[1] < 0:
+            pos[1] = 0
+
         return pos
 
 

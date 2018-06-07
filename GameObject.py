@@ -11,41 +11,133 @@ class GameObject:
     screen = None
     map = None
     color = (0, 0, 0)
-    speed = 1
+
     x_vector = 0
     y_vector = 0
     destination = []
+    path = []
 
-    def __init__(self, title, screen, game_map, position, size, color, speed=1):
+    def __init__(self, title, screen, game_map, position, size, color):
         self.title = title
         self.screen = screen
         self.map = game_map
-        self.x = position[0]
-        self.y = position[1]
         self.width = size[0]
         self.height = size[1]
         self.color = color
-        self.speed = speed
 
-        self.destination = [self.x, self.y]
-        self.coord = [self.x, self.y]
+        self.coord = [position[0], position[1]]
 
         cell = self.get_current_cell()
         cell.set_object(self)
 
         self.window_position = [cell.x, cell.y]
 
-    def update_position(self):
-        if self.destination != self.coord:
-            cell = self.get_destination_cell()
-            if not self.is_destination(cell):
-                self.update_vectors()
-                self.window_position = self.get_next_position()
+    def update(self):
+        return None
+
+    def draw(self, cell_size):
+        return None
+
+    def get_current_cell(self):
+        return self.map.get_cell(self.coord[0], self.coord[1])
+
+
+class StaticObject(GameObject):
+    def __init__(self, title, screen, game_map, position, size, color):
+        super().__init__(title, screen, game_map, position, size, color)
+
+    def draw(self, cell_size):
+        self.screen.fill(self.color, rect=[
+            self.window_position[0],
+            self.window_position[1],
+            self.width * cell_size,
+            self.height * cell_size
+        ])
+
+
+class MobObject(GameObject):
+    speed = 1
+
+    def __init__(self, title, screen, game_map, position, size, color, speed=1):
+        self.speed = speed
+
+        self.destination = [position[0], position[1]]
+
+        super().__init__(title, screen, game_map, position, size, color)
+
+    def get_destination_cell(self):
+        return self.map.get_cell(self.destination[0], self.destination[1])
+
+    def set_destination(self, row, column):
+        self.create_path([self.coord[0], self.coord[1]], [row, column])
+
+    def create_path(self, start, end):
+        path = []
+
+        step_number = 0
+        current_step = start
+
+        while end != current_step:
+            path.append([current_step[0], current_step[1]])
+            if current_step[0] < end[0]:
+                current_step[0] += 1
+                path[step_number][0] = current_step[0]
+
+            if current_step[0] > end[0]:
+                current_step[0] -= 1
+                path[step_number][0] = current_step[0]
+
+            if current_step[1] < end[1]:
+                current_step[1] += 1
+                path[step_number][1] = current_step[1]
+
+            if current_step[1] > end[1]:
+                current_step[1] -= 1
+                path[step_number][1] = current_step[1]
+
+            step_number += 1
+
+        self.path = path
+
+    def go_left(self):
+        self.set_destination(self.coord[0] - 1, self.coord[1])
+
+    def go_right(self):
+        self.set_destination(self.coord[0] + 1, self.coord[1])
+
+    def go_up(self):
+        self.set_destination(self.coord[0], self.coord[1] - 1)
+
+    def go_down(self):
+        self.set_destination(self.coord[0], self.coord[1] + 1)
+
+    def stop(self):
+        self.path = []
+
+    def update(self):
+        if self.path:
+            if self.destination == self.coord:
+                next_step = self.path[0]
+                next_cell = self.map.get_cell(next_step[0], next_step[1])
+                if next_cell.is_empty():
+                    self.destination = next_step
+                    self.update_move()
+                else:
+                    self.stop()
             else:
-                self.window_position = [cell.x, cell.y]
-                self.coord = [self.destination[0], self.destination[1]]
-                self.x_vector = 0
-                self.y_vector = 0
+                self.update_move()
+
+    def update_move(self):
+        self.update_vectors()
+        cell = self.get_destination_cell()
+        if self.is_destination(cell):
+            self.window_position = [cell.x, cell.y]
+            self.coord = [self.destination[0], self.destination[1]]
+            self.x_vector = 0
+            self.y_vector = 0
+            self.path.pop(0)
+        else:
+            self.window_position = self.get_next_position()
 
     def update_vectors(self):
         cell = self.get_destination_cell()
@@ -91,7 +183,7 @@ class GameObject:
 
         return is_destination_x and is_destination_y
 
-    def draw(self, start_position, cell_size):
+    def draw(self, cell_size):
         self.screen.fill(self.color, rect=[
             self.window_position[0],
             self.window_position[1],
@@ -99,61 +191,4 @@ class GameObject:
             self.height * cell_size
         ])
 
-    def get_current_cell(self):
-        return self.map.get_cell(self.coord[0], self.coord[1])
 
-    def get_destination_cell(self):
-        return self.map.get_cell(self.destination[0], self.destination[1])
-
-    def set_destination(self, row, column):
-        if self.destination != [row, column]:
-            if self.destination[0] > row:
-                self.x_vector = -1
-            else:
-                if self.destination[0] < row:
-                    self.x_vector = 1
-                else:
-                    self.x_vector = 0
-
-            if self.destination[1] > column:
-                self.y_vector = -1
-            else:
-                if self.destination[1] < column:
-                    self.y_vector = 1
-                else:
-                    self.y_vector = 0
-        self.destination = [row, column]
-
-    def check_edge_collision(self, edge):
-        (x_p, y_p) = self.get_next_position()
-        if x_p + self.width > edge[0] or x_p < 0:
-            self.prevent_horizontal()
-
-        if y_p + self.height > edge[1] or y_p < 0:
-            self.prevent_vertical()
-
-    def prevent_horizontal(self):
-        # self.x_vector = 0
-        self.x_vector *= -1
-
-    def prevent_vertical(self):
-        # self.y_vector = 0
-        self.y_vector *= -1
-
-    def go_left(self):
-        self.set_destination(self.coord[0] - 1, self.coord[1])
-
-    def go_right(self):
-        self.set_destination(self.coord[0] + 1, self.coord[1])
-
-    def stop_horizontal(self):
-        self.x_vector = 0
-
-    def go_up(self):
-        self.set_destination(self.coord[0], self.coord[1] - 1)
-
-    def go_down(self):
-        self.set_destination(self.coord[0], self.coord[1] + 1)
-
-    def stop_vertical(self):
-        self.y_vector = 0

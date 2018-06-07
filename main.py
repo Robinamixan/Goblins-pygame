@@ -15,12 +15,11 @@ def set_window_settings(size, title):
 
 screen_game = set_window_settings(screen_size, 'My PyGame Windows')
 
-game_map = MapObject('map_test', screen_game, (50, 50), map_cell_size, 10, 10)
+game_map = MapObject('map_test', screen_game, (50, 50), map_cell_size, 10, 15)
+# TODO fix speed bug
+first_rect = MobObject('first', screen_game, game_map, (1, 1), (1, 1), blue, 4)
 
-first_rect = GameObject('first', screen_game, game_map, (1, 1), (1, 1), blue, 3)
-second_rect = GameObject('second', screen_game, game_map, (3, 3), (1, 1), green, 12)
-
-first_rect.go_right()
+game_map.create_wall([3, 4])
 
 myfont = pygame.font.SysFont("monospace", 15)
 
