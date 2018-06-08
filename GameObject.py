@@ -3,19 +3,13 @@ from ConstantVariables import *
 
 class GameObject:
     title = ''
-    x = 0
-    y = 0
+    window_position = []
     coord = [0, 0]
     width = 0
     height = 0
     screen = None
     map = None
     color = (0, 0, 0)
-
-    x_vector = 0
-    y_vector = 0
-    destination = []
-    path = []
 
     def __init__(self, title, screen, game_map, position, size, color):
         self.title = title
@@ -57,6 +51,9 @@ class StaticObject(GameObject):
 
 class MobObject(GameObject):
     speed = 1
+    vectors = [0, 0]
+    destination = []
+    path = []
 
     def __init__(self, title, screen, game_map, position, size, color, speed=1):
         self.speed = speed
@@ -113,6 +110,11 @@ class MobObject(GameObject):
 
     def stop(self):
         self.path = []
+        cell = self.get_destination_cell()
+        self.window_position = [cell.x, cell.y]
+        self.coord = [self.destination[0], self.destination[1]]
+        self.vectors[0] = 0
+        self.vectors[1] = 0
 
     def update(self):
         if self.path:
@@ -120,68 +122,104 @@ class MobObject(GameObject):
                 next_step = self.path[0]
                 next_cell = self.map.get_cell(next_step[0], next_step[1])
                 if next_cell.is_empty():
+                    current_cell = self.map.get_cell(self.coord[0], self.coord[1])
+                    current_cell.clear()
+                    next_cell.set_object(self)
                     self.destination = next_step
                     self.update_move()
+
                 else:
                     self.stop()
             else:
                 self.update_move()
+        else:
+            self.stop()
 
     def update_move(self):
-        self.update_vectors()
         cell = self.get_destination_cell()
-        if self.is_destination(cell):
-            self.window_position = [cell.x, cell.y]
+        if self.is_destination_x(cell) and self.is_destination_y(cell):
+            # self.window_position = [cell.x, cell.y]
             self.coord = [self.destination[0], self.destination[1]]
-            self.x_vector = 0
-            self.y_vector = 0
             self.path.pop(0)
+            self.update_vectors_in_wait_position()
         else:
+            if self.is_destination_x(cell):
+                self.window_position[0] = cell.x
+                self.coord[0] = self.destination[0]
+
+            if self.is_destination_y(cell):
+                self.window_position[1] = cell.y
+                self.coord[1] = self.destination[1]
+
+            self.update_vectors(cell)
             self.window_position = self.get_next_position()
 
-    def update_vectors(self):
-        cell = self.get_destination_cell()
+    def update_vectors(self, cell):
         if self.window_position[0] > cell.x:
-            self.x_vector = -1
+            self.vectors[0] = -1
         else:
             if self.window_position[0] < cell.x:
-                self.x_vector = 1
+                self.vectors[0] = 1
             else:
-                self.x_vector = 0
+                self.vectors[0] = 0
 
         if self.window_position[1] > cell.y:
-            self.y_vector = -1
+            self.vectors[1] = -1
         else:
             if self.window_position[1] < cell.y:
-                self.y_vector = 1
+                self.vectors[1] = 1
             else:
-                self.y_vector = 0
+                self.vectors[1] = 0
+
+        if self.vectors[0] == 0 and self.vectors[1] == 0:
+            self.update_vectors_in_wait_position()
+
+    def update_vectors_in_wait_position(self):
+        if self.path:
+            next_destin = self.path[0]
+
+            if next_destin[0] > self.coord[0]:
+                self.vectors[0] = 1
+            else:
+                if next_destin[0] < self.coord[0]:
+                    self.vectors[0] = -1
+                else:
+                    self.vectors[0] = 0
+
+            if next_destin[1] > self.coord[1]:
+                self.vectors[1] = -1
+            else:
+                if next_destin[1] < self.coord[1]:
+                    self.vectors[1] = 1
+                else:
+                    self.vectors[1] = 0
 
     def get_next_position(self):
         cell = self.get_current_cell()
         step = cell.size / fps
-        next_x = self.window_position[0] + self.speed * step * self.x_vector
-        next_y = self.window_position[1] + self.speed * step * self.y_vector
+        next_x = self.window_position[0] + self.speed * step * self.vectors[0]
+        next_y = self.window_position[1] + self.speed * step * self.vectors[1]
         return [next_x, next_y]
 
-    def is_destination(self, cell):
-        is_destination_x = False
+    def is_destination_x(self, cell):
         if self.destination[0] > self.coord[0]:
             if self.window_position[0] >= cell.x:
-                is_destination_x = True
+                return True
         else:
             if self.window_position[0] <= cell.x:
-                is_destination_x = True
+                return True
 
-        is_destination_y = False
+        return False
+
+    def is_destination_y(self, cell):
         if self.destination[1] > self.coord[1]:
             if self.window_position[1] >= cell.y:
-                is_destination_y = True
+                return True
         else:
             if self.window_position[1] <= cell.y:
-                is_destination_y = True
+                return True
 
-        return is_destination_x and is_destination_y
+        return False
 
     def draw(self, cell_size):
         self.screen.fill(self.color, rect=[

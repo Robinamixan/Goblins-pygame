@@ -13,11 +13,16 @@ def set_window_settings(size, title):
     return screen
 
 
+def view_label(screen, point, text):
+    label = myfont.render(text, 1, (0, 0, 0))
+    screen.blit(label, point)
+
+
 screen_game = set_window_settings(screen_size, 'My PyGame Windows')
 
 game_map = MapObject('map_test', screen_game, (50, 50), map_cell_size, 10, 15)
-# TODO fix speed bug
-first_rect = MobObject('first', screen_game, game_map, (1, 1), (1, 1), blue, 4)
+
+first_rect = MobObject('first', screen_game, game_map, (1, 1), (1, 1), blue, 5)
 
 game_map.create_wall([3, 4])
 
@@ -41,6 +46,8 @@ while not closeWindow:
                 first_rect.go_left()
             if event.key == K_d:
                 first_rect.go_right()
+            if event.key == K_p:
+                first_rect.stop()
 
         if event.type == MOUSEBUTTONDOWN:
             if event.button == 1:
@@ -54,17 +61,22 @@ while not closeWindow:
     game_map.draw_field(pygame.draw)
     game_map.draw_cells()
 
-    label1 = myfont.render(str(int(first_rect.destination[0])), 1, (0, 0, 0))
-    label2 = myfont.render(str(int(first_rect.destination[1])), 1, (0, 0, 0))
+    view_label(screen_game, (600, 100), str(int(first_rect.destination[0])))
+    view_label(screen_game, (600, 120), str(int(first_rect.destination[1])))
 
-    label3 = myfont.render(str(pos[0]), 1, (0, 0, 0))
-    label4 = myfont.render(str(pos[1]), 1, (0, 0, 0))
+    view_label(screen_game, (600, 200), str(int(first_rect.coord[0])))
+    view_label(screen_game, (600, 220), str(int(first_rect.coord[1])))
 
-    screen_game.blit(label1, (600, 100))
-    screen_game.blit(label2, (600, 120))
+    view_label(screen_game, (600, 300), str(int(first_rect.vectors[0])))
+    view_label(screen_game, (600, 320), str(int(first_rect.vectors[1])))
+    view_label(screen_game, (400, 400), str(first_rect.path))
 
-    screen_game.blit(label3, (700, 100))
-    screen_game.blit(label4, (700, 120))
+    view_label(screen_game, (500, 200), str(int(first_rect.window_position[0])))
+    view_label(screen_game, (500, 220), str(int(first_rect.window_position[1])))
+
+    view_label(screen_game, (700, 100), str(pos[0]))
+    view_label(screen_game, (700, 120), str(pos[1]))
+
     pygame.display.update()
 
     clock.tick(fps)
