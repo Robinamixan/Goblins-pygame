@@ -1,4 +1,5 @@
 from GameObject import *
+from ConstantVariables import *
 
 
 class MapObject:
@@ -21,6 +22,9 @@ class MapObject:
         self.width_cells = width_cells
         self.height_cells = height_cells
         self.cells = [0] * width_cells
+
+        self.map_sprites = pygame.sprite.Group()
+
         for i in range(0, width_cells):
             self.cells[i] = [None] * height_cells
             for j in range(0, height_cells):
@@ -55,14 +59,16 @@ class MapObject:
                     map_object.update()
 
     def draw_cells(self):
-        for x, row in enumerate(self.cells):
-            for y, cell in enumerate(row):
-                if not cell.is_empty():
-                    map_object = cell.get_object()
-                    map_object.draw(self.cell_size)
+        self.map_sprites.draw(self.screen)
+        # for x, row in enumerate(self.cells):
+        #     for y, cell in enumerate(row):
+        #         if not cell.is_empty():
+        #             map_object = cell.get_object()
+        #             map_object.draw(self.cell_size)
 
     def create_wall(self, point):
-        StaticObject('second', self.screen, self, point, (1, 1), brow)
+        b = StaticObject('second', self.screen, self, point, (1, 1), brow)
+        self.map_sprites.add(b)
 
     def get_cell(self, x, y):
         return self.cells[x][y]

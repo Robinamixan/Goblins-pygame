@@ -1,7 +1,7 @@
 import pygame
 
 from pygame.locals import *
-from GameObject import *
+from MobObjects.MobObject import *
 from MapObject import *
 from ConstantVariables import *
 
@@ -20,11 +20,15 @@ def view_label(screen, point, text):
 
 screen_game = set_window_settings(screen_size, 'My PyGame Windows')
 
-game_map = MapObject('map_test', screen_game, (50, 50), map_cell_size, 10, 15)
+game_map = MapObject('map_test', screen_game, (50, 50), map_cell_size, 15, 15)
 
-first_rect = MobObject('first', screen_game, game_map, (1, 1), (1, 1), blue, 5)
+all_sprites = pygame.sprite.Group()
+first_rect = MobObject('first', screen_game, game_map, (1, 1), (2, 2), blue, 5)
+
+all_sprites.add(first_rect)
 
 game_map.create_wall([3, 4])
+game_map.create_wall([3, 5])
 
 myfont = pygame.font.SysFont("monospace", 15)
 
@@ -56,10 +60,13 @@ while not closeWindow:
                 pos = game_map.get_cell_by_coord(event.pos[0], event.pos[1])
                 first_rect.set_destination(pos[0], pos[1])
 
-    game_map.update_cells()
+    # game_map.update_cells()
+    all_sprites.update()
 
     game_map.draw_field(pygame.draw)
     game_map.draw_cells()
+
+    all_sprites.draw(screen_game)
 
     view_label(screen_game, (600, 100), str(int(first_rect.destination[0])))
     view_label(screen_game, (600, 120), str(int(first_rect.destination[1])))
@@ -69,7 +76,7 @@ while not closeWindow:
 
     view_label(screen_game, (600, 300), str(int(first_rect.vectors[0])))
     view_label(screen_game, (600, 320), str(int(first_rect.vectors[1])))
-    view_label(screen_game, (400, 400), str(first_rect.path))
+    view_label(screen_game, (450, 400), str(first_rect.path))
 
     view_label(screen_game, (500, 200), str(int(first_rect.window_position[0])))
     view_label(screen_game, (500, 220), str(int(first_rect.window_position[1])))
