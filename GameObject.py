@@ -26,18 +26,14 @@ class GameObject(pygame.sprite.Sprite):
 
         self.coord = [position[0], position[1]]
 
-        cell = self.get_current_cell()
-        cell.set_object(self)
-
-        self.rect.x = cell.x
-        self.rect.y = cell.y
-        self.window_position = [cell.x, cell.y]
-
     def update(self):
         return None
 
     def draw(self, cell_size):
         return None
+
+    def get_name(self):
+        return self.title
 
     def get_current_cell(self):
         return self.map.get_cell(self.coord[0], self.coord[1])
@@ -50,15 +46,9 @@ class StaticObject(GameObject):
         self.image.fill(color)
 
         self.rect = self.image.get_rect()
+
         cell = self.get_current_cell()
+        cell.set_object(self, False)
 
         self.rect.x = cell.x
         self.rect.y = cell.y
-
-    def draw(self, cell_size):
-        self.screen.fill(self.color, rect=[
-            self.window_position[0],
-            self.window_position[1],
-            self.width * cell_size,
-            self.height * cell_size
-        ])

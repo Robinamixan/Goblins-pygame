@@ -1,3 +1,5 @@
+import math
+
 from GameObject import *
 from ConstantVariables import *
 
@@ -7,26 +9,53 @@ class MobObject(GameObject):
     vectors = [0, 0]
     destination = []
     path = []
+    action = 'w'
+    stock = None
 
-    def __init__(self, title, screen, game_map, position, size, color, speed=1):
-        super().__init__(title, screen, game_map, position, size, color)
+    def __init__(self, title, screen, game_map, position, size, speed=1):
+        super().__init__(title, screen, game_map, position, size, white)
         self.speed = speed
+
+        cell = self.get_current_cell()
+        cell.set_object(self, False)
+
+        self.rect.x = cell.x
+        self.rect.y = cell.y
 
         self.image = pygame.image.load('goblin_alpha_1.1.png').convert_alpha()
 
         self.destination = [position[0], position[1]]
 
+    def get_action(self):
+        if self.action == 'w':
+            if self.path:
+                return 'waiting clear path'
+            else:
+                return 'waiting'
+        if self.action == 'm':
+            return 'going'
+        if self.action == 'g':
+            return 'getting'
+
     def get_destination_cell(self):
         return self.map.get_cell(self.destination[0], self.destination[1])
 
     def set_destination(self, row, column):
-        self.create_path([self.coord[0], self.coord[1]], [row, column])
+        self.create_path([self.destination[0], self.destination[1]], [row, column])
+        if row and column:
+            self.action = 'm'
 
     def create_path(self, start, end):
         path = []
+        current_step = [0, 0]
 
         step_number = 0
-        current_step = start
+
+        (current_step[0], current_step[1]) = (start[0], start[1])
+
+        if self.path:
+            step_number += 1
+            path.append([current_step[0], current_step[1]])
 
         while end != current_step:
             path.append([current_step[0], current_step[1]])
@@ -63,25 +92,24 @@ class MobObject(GameObject):
         self.set_destination(self.coord[0], self.coord[1] + 1)
 
     def stop(self):
-        self.path = []
         cell = self.get_destination_cell()
         (self.rect.x, self.rect.y) = (cell.x, cell.y)
         self.coord = [self.destination[0], self.destination[1]]
         self.vectors[0] = 0
         self.vectors[1] = 0
+        self.action = 'w'
 
     def update(self):
         if self.path:
             if self.destination == self.coord:
                 next_step = self.path[0]
                 next_cell = self.map.get_cell(next_step[0], next_step[1])
-                if next_cell.is_empty():
+                if next_cell.is_can_move(self):
                     current_cell = self.map.get_cell(self.coord[0], self.coord[1])
                     current_cell.clear()
                     next_cell.set_object(self)
                     self.destination = next_step
                     self.update_move()
-
                 else:
                     self.stop()
             else:
@@ -150,8 +178,10 @@ class MobObject(GameObject):
     def set_next_position(self):
         cell = self.get_current_cell()
         step = cell.size / fps
-        self.rect.x = self.rect.x + self.speed * step * self.vectors[0]
-        self.rect.y = self.rect.y + self.speed * step * self.vectors[1]
+        step_x = self.rect.x + self.speed * step * self.vectors[0]
+        step_y = self.rect.y + self.speed * step * self.vectors[1]
+        self.rect.x = math.ceil(step_x)
+        self.rect.y = math.ceil(step_y)
 
     def is_destination_x(self, cell):
         if self.destination[0] > self.coord[0]:
@@ -173,12 +203,10 @@ class MobObject(GameObject):
 
         return False
 
-    # def draw(self, cell_size):
-    #     self.screen.fill(self.color, rect=[
-    #         self.rect.x,
-    #         self.rect.y,
-    #         self.width * cell_size,
-    #         self.height * cell_size
-    #     ])
-
-
+    def draw_path(self, cell_size):
+        if self.path:
+            for point in self.path:
+                cell = self.map.get_cell(point[0], point[1])
+                image = pygame.Surface((self.width * cell_size, self.height * cell_size), pygame.SRCALPHA)
+                image.fill(red)
+                self.screen.blit(image, [cell.x, cell.y])

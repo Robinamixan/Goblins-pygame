@@ -67,13 +67,29 @@ class MapObject:
         #             map_object.draw(self.cell_size)
 
     def create_wall(self, point):
-        b = StaticObject('second', self.screen, self, point, (1, 1), brow)
+        b = StaticObject('wall_' + str(point[0]) + '_' + str(point[1]), self.screen, self, point, (1, 1), brow)
         self.map_sprites.add(b)
+
+    def create_map_from_file(self, file_name):
+        file = open('test_map.txt', 'r')
+        ind_y = 0
+        ind_x = 0
+        for line in file:
+            for character in line:
+                if character == 'w':
+                    self.create_wall((ind_x, ind_y))
+
+                if character == '\n':
+                    ind_x = 0
+                else:
+                    ind_x += 1
+            ind_y += 1
+        file.close()
 
     def get_cell(self, x, y):
         return self.cells[x][y]
 
-    def get_cell_by_coord(self, x, y):
+    def get_cell_position_by_coord(self, x, y):
         pos = [int((x - self.x) / self.cell_size), int((y - self.y) / self.cell_size)]
 
         if pos[0] >= self.width_cells:
@@ -92,27 +108,36 @@ class MapObject:
 
 
 class CellObject:
-    empty = True
+    passable = True
     contain = None
     x = 0
     y = 0
     size = map_cell_size
 
     def __init__(self, x, y):
-        self.empty = True
+        self.passable = True
         self.x = x
         self.y = y
 
     def is_empty(self):
-        return self.empty
+        return self.passable
+
+    def is_can_move(self, moved_object):
+        if self.passable:
+            return True
+        else:
+            if moved_object == self.contain:
+                return True
+            else:
+                return False
 
     def get_object(self):
         return self.contain
 
-    def set_object(self, map_object):
+    def set_object(self, map_object, passable=False):
         self.contain = map_object
-        self.empty = False
+        self.passable = passable
 
     def clear(self):
         self.contain = None
-        self.empty = True
+        self.passable = True
