@@ -60,18 +60,13 @@ class MapObject:
 
     def draw_cells(self):
         self.map_sprites.draw(self.screen)
-        # for x, row in enumerate(self.cells):
-        #     for y, cell in enumerate(row):
-        #         if not cell.is_empty():
-        #             map_object = cell.get_object()
-        #             map_object.draw(self.cell_size)
 
     def create_wall(self, point):
         b = StaticObject('wall_' + str(point[0]) + '_' + str(point[1]), self.screen, self, point, (1, 1), brow)
         self.map_sprites.add(b)
 
     def create_map_from_file(self, file_name):
-        file = open('test_map.txt', 'r')
+        file = open(file_name, 'r')
         ind_y = 0
         ind_x = 0
         for line in file:

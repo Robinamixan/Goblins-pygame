@@ -3,11 +3,11 @@ import json
 
 
 width_cells = 15
-height_cells = 15
+height_cells = 30
 cells = ['-'] * width_cells
 for i in range(0, width_cells):
     cells[i] = [0] * height_cells
-    for j in range(0, width_cells):
+    for j in range(0, height_cells):
         cells[i][j] = '-'
 
 ind_x = 0

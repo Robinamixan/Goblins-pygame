@@ -12,7 +12,7 @@ class MobObject(GameObject):
     action = 'w'
     stock = None
 
-    def __init__(self, title, screen, game_map, position, size, speed=1):
+    def __init__(self, title, screen, game_map, position, size, speed=1, image_path=''):
         super().__init__(title, screen, game_map, position, size, white)
         self.speed = speed
 
@@ -22,10 +22,11 @@ class MobObject(GameObject):
         self.rect.x = cell.x
         self.rect.y = cell.y
 
-        self.image = pygame.image.load('goblin_alpha_1.1.png').convert_alpha()
+        self.image = pygame.image.load(image_path).convert_alpha()
 
         self.destination = [position[0], position[1]]
 
+    # Getting current acts of mob
     def get_action(self):
         if self.action == 'w':
             if self.path:
@@ -37,14 +38,17 @@ class MobObject(GameObject):
         if self.action == 'g':
             return 'getting'
 
+    # Get destination cell by current destination coord
     def get_destination_cell(self):
         return self.map.get_cell(self.destination[0], self.destination[1])
 
+    # Set destination coord on the map and change action to 'move'
     def set_destination(self, row, column):
         self.create_path([self.destination[0], self.destination[1]], [row, column])
         if row and column:
             self.action = 'm'
 
+    # Creating move path by start and end points
     def create_path(self, start, end):
         path = []
         current_step = [0, 0]
@@ -79,6 +83,7 @@ class MobObject(GameObject):
 
         self.path = path
 
+    # Movement commands
     def go_left(self):
         self.set_destination(self.coord[0] - 1, self.coord[1])
 
@@ -91,6 +96,7 @@ class MobObject(GameObject):
     def go_down(self):
         self.set_destination(self.coord[0], self.coord[1] + 1)
 
+    # Stops mob on his current cell
     def stop(self):
         cell = self.get_destination_cell()
         (self.rect.x, self.rect.y) = (cell.x, cell.y)
@@ -178,10 +184,17 @@ class MobObject(GameObject):
     def set_next_position(self):
         cell = self.get_current_cell()
         step = cell.size / fps
-        step_x = self.rect.x + self.speed * step * self.vectors[0]
-        step_y = self.rect.y + self.speed * step * self.vectors[1]
-        self.rect.x = math.ceil(step_x)
-        self.rect.y = math.ceil(step_y)
+        step_x = self.speed * step * self.vectors[0]
+        step_y = self.speed * step * self.vectors[1]
+        if step_x > 0:
+            self.rect.x = self.rect.x + math.ceil(step_x)
+        else:
+            self.rect.x = self.rect.x + math.floor(step_x)
+
+        if step_y > 0:
+            self.rect.y = self.rect.y + math.ceil(step_y)
+        else:
+            self.rect.y = self.rect.y + math.floor(step_y)
 
     def is_destination_x(self, cell):
         if self.destination[0] > self.coord[0]:

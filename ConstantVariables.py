@@ -1,4 +1,4 @@
-screen_size = (800, 600)
+screen_size = (850, 700)
 fps = 30
 white = (255, 255, 255)
 black = (0, 0, 0)
