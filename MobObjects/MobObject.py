@@ -40,7 +40,7 @@ class MobObject(GameObject):
 
     # Get destination cell by current destination coord
     def get_destination_cell(self):
-        return self.map.get_cell(self.destination[0], self.destination[1])
+        return self.get_cell(self.destination[0], self.destination[1])
 
     # Set destination coord on the map and change action to 'move'
     def set_destination(self, row, column):
@@ -85,16 +85,16 @@ class MobObject(GameObject):
 
     # Movement commands
     def go_left(self):
-        self.set_destination(self.coord[0] - 1, self.coord[1])
+        self.set_destination(self.destination[0] - 1, self.destination[1])
 
     def go_right(self):
-        self.set_destination(self.coord[0] + 1, self.coord[1])
+        self.set_destination(self.destination[0] + 1, self.destination[1])
 
     def go_up(self):
-        self.set_destination(self.coord[0], self.coord[1] - 1)
+        self.set_destination(self.destination[0], self.destination[1] - 1)
 
     def go_down(self):
-        self.set_destination(self.coord[0], self.coord[1] + 1)
+        self.set_destination(self.destination[0], self.destination[1] + 1)
 
     # Stops mob on his current cell
     def stop(self):
@@ -109,9 +109,9 @@ class MobObject(GameObject):
         if self.path:
             if self.destination == self.coord:
                 next_step = self.path[0]
-                next_cell = self.map.get_cell(next_step[0], next_step[1])
+                next_cell = self.get_cell(next_step[0], next_step[1])
                 if next_cell.is_can_move(self):
-                    current_cell = self.map.get_cell(self.coord[0], self.coord[1])
+                    current_cell = self.get_cell(self.coord[0], self.coord[1])
                     current_cell.clear()
                     next_cell.set_object(self)
                     self.destination = next_step
@@ -219,7 +219,7 @@ class MobObject(GameObject):
     def draw_path(self, cell_size):
         if self.path:
             for point in self.path:
-                cell = self.map.get_cell(point[0], point[1])
+                cell = self.get_cell(point[0], point[1])
                 image = pygame.Surface((self.width * cell_size, self.height * cell_size), pygame.SRCALPHA)
                 image.fill(red)
                 self.screen.blit(image, [cell.x, cell.y])

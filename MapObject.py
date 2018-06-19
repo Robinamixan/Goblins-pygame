@@ -1,5 +1,4 @@
-from GameObject import *
-from ConstantVariables import *
+from StaticObject import *
 
 
 class MapObject:
@@ -44,6 +43,7 @@ class MapObject:
                     cell.size + 1,
                     cell.size + 1
                 ]
+                tool.rect(self.screen, dark_green, rectangle)
                 tool.rect(self.screen, black, rectangle, 1)
 
         tool.line(self.screen, red, (self.x, self.y), (self.x, end_y), 2)

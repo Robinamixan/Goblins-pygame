@@ -4,6 +4,7 @@ white = (255, 255, 255)
 black = (0, 0, 0)
 blue = (0, 0, 255)
 green = (0, 255, 0)
+dark_green = (168, 204, 85)
 red = (255, 0, 0, 125)
 brow = (175, 55, 0)
 map_cell_size = 25

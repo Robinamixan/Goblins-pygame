@@ -36,19 +36,8 @@ class GameObject(pygame.sprite.Sprite):
         return self.title
 
     def get_current_cell(self):
-        return self.map.get_cell(self.coord[0], self.coord[1])
+        return self.get_cell(self.coord[0], self.coord[1])
 
+    def get_cell(self, x , y):
+        return self.map.get_cell(x, y)
 
-class StaticObject(GameObject):
-    def __init__(self, title, screen, game_map, position, size, color):
-        super().__init__(title, screen, game_map, position, size, color)
-        self.image = pygame.Surface((size[0] * map_cell_size, size[1] * map_cell_size))
-        self.image.fill(color)
-
-        self.rect = self.image.get_rect()
-
-        cell = self.get_current_cell()
-        cell.set_object(self, False)
-
-        self.rect.x = cell.x
-        self.rect.y = cell.y

@@ -1,8 +1,6 @@
-import pygame
-
 from pygame.locals import *
-from MobObjects.MobObject import *
 from MobObjects.MobCreator import *
+from ItemObjects.ItemCreator import *
 from MapObject import *
 from ConstantVariables import *
 
@@ -25,11 +23,17 @@ game_map = MapObject('map_test', screen_game, (50, 50), map_cell_size, 30, 15)
 game_map.create_map_from_file('test_map.txt')
 
 mob_creator = MobCreator(screen_game, game_map)
+item_creator = ItemCreator(screen_game, game_map)
 
 all_mobs = pygame.sprite.Group()
+all_items = pygame.sprite.Group()
 
 first_gob = mob_creator.create_goblin('first goblin', (1, 1), 5)
 second_gob = mob_creator.create_goblin('second goblin', (6, 7), 3)
+
+meat_1 = item_creator.create_meat('first_meat', (19, 7))
+
+all_items.add(meat_1)
 
 all_mobs.add(first_gob)
 all_mobs.add(second_gob)
@@ -57,7 +61,9 @@ while not closeWindow:
             if event.key == K_d:
                 second_gob.go_right()
             if event.key == K_p:
-                second_gob.stop()
+                cell = game_map.get_cell(19, 7)
+                cell.clear()
+                all_items.remove_internal(meat_1)
 
         if event.type == MOUSEBUTTONDOWN:
             if event.button == 1:
@@ -75,6 +81,8 @@ while not closeWindow:
     game_map.draw_field(pygame.draw)
     game_map.draw_cells()
 
+    all_items.draw(screen_game)
+
     if focused:
         if isinstance(focused, MobObject):
             focused.draw_path(map_cell_size)
@@ -83,7 +91,7 @@ while not closeWindow:
 
     if focused:
         if isinstance(focused, MobObject):
-            view_label(screen_game, (150, 25), focused.get_name() + ' - ' + focused.get_action())
+            view_label(screen_game, (150, 15), focused.get_name() + ' - ' + focused.get_action())
 
             view_label(screen_game, (25, 450),
                        'coords:      [' + str(int(focused.coord[0])) + ', ' + str(int(focused.coord[1])) + ']')
@@ -103,9 +111,9 @@ while not closeWindow:
             view_label(screen_game, (25, 550), 'path: ' + str(focused.path))
 
         else:
-            view_label(screen_game, (200, 25), focused.get_name())
+            view_label(screen_game, (200, 15), focused.get_name())
     else:
-        view_label(screen_game, (200, 25), 'None')
+        view_label(screen_game, (200, 15), 'None')
 
     view_label(screen_game, (400, 5), 'x: ' + str(win_coord[0]) + '[' + str(pos[0]) + ']')
     view_label(screen_game, (400, 30), 'y: ' + str(win_coord[1]) + '[' + str(pos[1]) + ']')
