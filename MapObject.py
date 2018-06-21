@@ -51,12 +51,12 @@ class MapObject:
         tool.line(self.screen, red, (end_x, self.y), (end_x, end_y), 2)
         tool.line(self.screen, red, (end_x, end_y), (self.x, end_y), 2)
 
-    def update_cells(self):
-        for x, row in enumerate(self.cells):
-            for y, cell in enumerate(row):
-                if not cell.is_empty():
-                    map_object = cell.get_object()
-                    map_object.update()
+    # def update_cells(self):
+    #     for x, row in enumerate(self.cells):
+    #         for y, cell in enumerate(row):
+    #             if not cell.is_empty():
+    #                 map_object = cell.get_object()
+    #                 map_object.update()
 
     def draw_cells(self):
         self.map_sprites.draw(self.screen)
@@ -104,18 +104,19 @@ class MapObject:
 
 class CellObject:
     passable = True
-    contain = None
+    contain = []
     x = 0
     y = 0
     size = map_cell_size
 
     def __init__(self, x, y):
         self.passable = True
+        self.contain = []
         self.x = x
         self.y = y
 
     def is_empty(self):
-        return self.passable
+        return not self.contain
 
     def is_can_move(self, moved_object):
         if self.passable:
@@ -127,12 +128,16 @@ class CellObject:
                 return False
 
     def get_object(self):
-        return self.contain
+        if self.contain:
+            return self.contain[-1]
+        else:
+            return False
 
     def set_object(self, map_object, passable=False):
-        self.contain = map_object
-        self.passable = passable
+        self.contain.append(map_object)
+        if not passable:
+            self.passable = False
 
-    def clear(self):
-        self.contain = None
+    def remove_object(self, map_object):
+        self.contain.remove(map_object)
         self.passable = True

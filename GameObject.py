@@ -29,6 +29,9 @@ class GameObject(pygame.sprite.Sprite):
     def update(self):
         return None
 
+    def get_image(self):
+        return self.image
+
     def draw(self, cell_size):
         return None
 

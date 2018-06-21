@@ -9,6 +9,11 @@ class ItemCreator:
         self.screen = screen
         self.map = game_map
 
-    def create_meat(self, name, position):
-        return ItemObject(name, self.screen, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
+    def create_meat(self, position):
+        return ItemObject('meat_1', self.screen, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
 
+    def create_meat_1(self, position):
+        return ItemObject('meat_2', self.screen, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
+
+    def create_meat_2(self, position):
+        return ItemObject('meat_3', self.screen, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
