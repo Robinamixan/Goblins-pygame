@@ -10,9 +10,10 @@ class MapObject:
     width_cells = 0
     height_cells = 0
     screen = None
+    game_controller = None
     color = (0, 0, 0)
 
-    def __init__(self, title, screen, position, cell_size, width_cells, height_cells):
+    def __init__(self, title, screen, game_controller, position, cell_size, width_cells, height_cells):
         self.title = title
         self.screen = screen
         self.x = position[0]
@@ -22,7 +23,7 @@ class MapObject:
         self.height_cells = height_cells
         self.cells = [0] * width_cells
 
-        self.map_sprites = pygame.sprite.Group()
+        self.game_controller = game_controller
 
         for i in range(0, width_cells):
             self.cells[i] = [None] * height_cells
@@ -51,19 +52,9 @@ class MapObject:
         tool.line(self.screen, red, (end_x, self.y), (end_x, end_y), 2)
         tool.line(self.screen, red, (end_x, end_y), (self.x, end_y), 2)
 
-    def update_cells(self):
-        for x, row in enumerate(self.cells):
-            for y, cell in enumerate(row):
-                if not cell.is_empty():
-                    map_object = cell.get_object()
-                    map_object.update()
-
-    def draw_cells(self):
-        self.map_sprites.draw(self.screen)
-
     def create_wall(self, point):
-        b = StaticObject('wall_' + str(point[0]) + '_' + str(point[1]), self.screen, self, point, (1, 1), brow)
-        self.map_sprites.add(b)
+        wall = StaticObject('wall_' + str(point[0]) + '_' + str(point[1]), self.screen, self.game_controller, self, point, (1, 1), brow)
+        self.game_controller.add_static_object(wall)
 
     def create_map_from_file(self, file_name):
         file = open(file_name, 'r')
@@ -104,18 +95,19 @@ class MapObject:
 
 class CellObject:
     passable = True
-    contain = None
+    contain = []
     x = 0
     y = 0
     size = map_cell_size
 
     def __init__(self, x, y):
         self.passable = True
+        self.contain = []
         self.x = x
         self.y = y
 
     def is_empty(self):
-        return self.passable
+        return not self.contain
 
     def is_can_move(self, moved_object):
         if self.passable:
@@ -127,12 +119,16 @@ class CellObject:
                 return False
 
     def get_object(self):
-        return self.contain
+        if self.contain:
+            return self.contain[-1]
+        else:
+            return False
 
     def set_object(self, map_object, passable=False):
-        self.contain = map_object
-        self.passable = passable
+        self.contain.append(map_object)
+        if not passable:
+            self.passable = False
 
-    def clear(self):
-        self.contain = None
+    def remove_object(self, map_object):
+        self.contain.remove(map_object)
         self.passable = True
