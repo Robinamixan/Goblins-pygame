@@ -1,6 +1,9 @@
 import math
+import copy
+# from main import remove_object_from_map
 
 from GameObject import *
+from InventoryObjects.InventoryObject import *
 from ConstantVariables import *
 
 
@@ -11,9 +14,10 @@ class MobObject(GameObject):
     path = []
     action = 'w'
     stock = None
+    inventory = None
 
-    def __init__(self, title, screen, game_map, position, size, speed=1, image_path=''):
-        super().__init__(title, screen, game_map, position, size, white)
+    def __init__(self, title, screen, game_controller, game_map, position, size, speed=1, image_path='', inventory_size=0):
+        super().__init__(title, screen, game_controller, game_map, position, size, white)
         self.speed = speed
 
         cell = self.get_current_cell()
@@ -26,17 +30,25 @@ class MobObject(GameObject):
 
         self.destination = [position[0], position[1]]
 
+        self.inventory = InventoryObject(inventory_size)
+
     # Getting current acts of mob
     def get_action(self):
-        if self.action == 'w':
-            if self.path:
-                return 'waiting clear path'
-            else:
-                return 'waiting'
-        if self.action == 'm':
-            return 'going'
-        if self.action == 'g':
-            return 'getting'
+        action_string = ''
+
+        if self.action == 'wait':
+            action_string = 'waiting'
+
+        if self.action == 'wait_clear':
+            action_string = 'waiting clear path'
+
+        if self.action == 'move':
+            action_string = 'going'
+
+        if self.action == 'get':
+            action_string = 'getting'
+
+        return action_string
 
     # Get destination cell by current destination coord
     def get_destination_cell(self):
@@ -46,7 +58,11 @@ class MobObject(GameObject):
     def set_destination(self, row, column):
         self.create_path([self.destination[0], self.destination[1]], [row, column])
         if row and column:
-            self.action = 'm'
+            cell = self.get_cell(row, column)
+            if cell.is_empty():
+                self.action = 'move'
+            else:
+                self.action = 'get'
 
     # Creating move path by start and end points
     def create_path(self, start, end):
@@ -103,23 +119,40 @@ class MobObject(GameObject):
         self.coord = [self.destination[0], self.destination[1]]
         self.vectors[0] = 0
         self.vectors[1] = 0
-        self.action = 'w'
+        if self.path:
+            self.action = 'wait_clear'
+        elif self.action == 'get':
+            items = copy.copy(cell.contain)
+            items.pop(-1)
+            for item in items:
+                if self.catch_item(item):
+                    cell.remove_object(item)
+                    self.game_controller.remove_item(item)
+            self.action = 'wait'
+        else:
+            self.action = 'wait'
 
     def update(self):
         if self.path:
             if self.destination == self.coord:
-                next_step = self.path[0]
-                next_cell = self.get_cell(next_step[0], next_step[1])
-                if next_cell.is_can_move(self):
-                    current_cell = self.get_cell(self.coord[0], self.coord[1])
-                    current_cell.clear()
-                    next_cell.set_object(self)
-                    self.destination = next_step
-                    self.update_move()
-                else:
-                    self.stop()
+                self.go_to_next_step()
             else:
                 self.update_move()
+        else:
+            self.stop()
+
+    def go_to_next_step(self):
+        next_step = self.path[0]
+        if next_step == self.coord:
+            self.path.pop(0)
+            next_step = self.path[0]
+        next_cell = self.get_cell(next_step[0], next_step[1])
+        if next_cell.is_can_move(self):
+            current_cell = self.get_cell(self.coord[0], self.coord[1])
+            current_cell.remove_object(self)
+            next_cell.set_object(self)
+            self.destination = next_step
+            self.update_move()
         else:
             self.stop()
 
@@ -223,3 +256,9 @@ class MobObject(GameObject):
                 image = pygame.Surface((self.width * cell_size, self.height * cell_size), pygame.SRCALPHA)
                 image.fill(red)
                 self.screen.blit(image, [cell.x, cell.y])
+
+    def catch_item(self, item):
+        return self.inventory.add_items(item, 1)
+
+    def get_inventory_info(self):
+        return self.inventory.get_info()

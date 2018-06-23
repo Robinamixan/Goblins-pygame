@@ -11,14 +11,16 @@ class GameObject(pygame.sprite.Sprite):
     screen = None
     map = None
     color = (0, 0, 0)
+    game_controller = None
 
-    def __init__(self, title, screen, game_map, position, size, color):
+    def __init__(self, title, screen, game_controller, game_map, position, size, color):
         pygame.sprite.Sprite.__init__(self)
         self.image = None
         self.rect = pygame.Rect(position[0], position[1], size[0] * map_cell_size, size[1] * map_cell_size)
 
         self.title = title
         self.screen = screen
+        self.game_controller = game_controller
         self.map = game_map
         self.width = size[0]
         self.height = size[1]
@@ -28,6 +30,9 @@ class GameObject(pygame.sprite.Sprite):
 
     def update(self):
         return None
+
+    def get_image(self):
+        return self.image
 
     def draw(self, cell_size):
         return None
