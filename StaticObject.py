@@ -5,8 +5,8 @@ from ConstantVariables import *
 
 
 class StaticObject(GameObject):
-    def __init__(self, title, screen, game_map, position, size, color):
-        super().__init__(title, screen, game_map, position, size, color)
+    def __init__(self, title, screen, game_controller, game_map, position, size, color):
+        super().__init__(title, screen, game_controller, game_map, position, size, color)
         self.image = pygame.Surface((size[0] * map_cell_size, size[1] * map_cell_size))
         self.image.fill(color)
 

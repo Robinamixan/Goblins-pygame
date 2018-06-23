@@ -1,6 +1,6 @@
 import math
 import copy
-from main import remove_object_from_map
+# from main import remove_object_from_map
 
 from GameObject import *
 from InventoryObjects.InventoryObject import *
@@ -16,8 +16,8 @@ class MobObject(GameObject):
     stock = None
     inventory = None
 
-    def __init__(self, title, screen, game_map, position, size, speed=1, image_path='', inventory_size=0):
-        super().__init__(title, screen, game_map, position, size, white)
+    def __init__(self, title, screen, game_controller, game_map, position, size, speed=1, image_path='', inventory_size=0):
+        super().__init__(title, screen, game_controller, game_map, position, size, white)
         self.speed = speed
 
         cell = self.get_current_cell()
@@ -125,9 +125,9 @@ class MobObject(GameObject):
             items = copy.copy(cell.contain)
             items.pop(-1)
             for item in items:
-                self.catch_item(item)
-                cell.remove_object(item)
-                remove_object_from_map(item)
+                if self.catch_item(item):
+                    cell.remove_object(item)
+                    self.game_controller.remove_item(item)
             self.action = 'wait'
         else:
             self.action = 'wait'
@@ -258,7 +258,7 @@ class MobObject(GameObject):
                 self.screen.blit(image, [cell.x, cell.y])
 
     def catch_item(self, item):
-        self.inventory.add_items(item, 1)
+        return self.inventory.add_items(item, 1)
 
     def get_inventory_info(self):
         return self.inventory.get_info()
