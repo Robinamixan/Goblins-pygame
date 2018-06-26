@@ -12,10 +12,7 @@ class ItemCreator:
         self.game_controller = game_controller
 
     def create_meat(self, position):
-        return ItemObject('meat_1', self.screen, self.game_controller, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
-
-    def create_meat_1(self, position):
-        return ItemObject('meat_2', self.screen, self.game_controller, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
-
-    def create_meat_2(self, position):
-        return ItemObject('meat_3', self.screen, self.game_controller, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
+        item = ItemObject('meat', self.screen, self.game_controller, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
+        item.set_edible(True)
+        item.set_stat('satiety', 15)
+        return item
