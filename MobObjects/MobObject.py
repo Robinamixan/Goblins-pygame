@@ -140,7 +140,6 @@ class MobObject(GameObject):
         if self.path:
             if self.destination == self.coord:
                 self.go_to_next_step()
-                self.update_self_task()
             else:
                 self.update_move()
         else:
