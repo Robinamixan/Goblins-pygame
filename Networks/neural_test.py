@@ -1,7 +1,7 @@
 import numpy as np
+from Networks.Network import *
 
-
-np.set_printoptions(threshold=np.nan, precision=2, suppress=True)
+# np.set_printoptions(threshold=np.nan, precision=2, suppress=True)
 
 
 # Сигмоида
@@ -11,39 +11,41 @@ def nonlin(x, deriv=False):
     return 1 / (1 + np.exp(-x))
 
 
-l1 = 0
-X = np.array([
-    [0, 0, 3, 0],
-    [0, 0, 0, 3],
-    [0, 0, 3, 3],
-    [3, 3, 3, 0],
-    [3, 3, 0, 3],
-    [3, 3, 0, 0],
-    [0, 0, 0, 0],
-    [2, 1, 1, 2],
-    [0, 3, 3, 0]
-              ])
-
-y = np.array([
-    [0, 1, 0, 0],
-    [0, 0, 1, 0],
-    [0, 1, 1, 0],
-    [1, 0, 0, 0],
-    [0, 0, 0, 1],
-    [1, 0, 0, 1],
-    [0, 0, 0, 0],
-    [0, 0, 1, 1],
-    [1, 1, 0, 0],
-])
-
-input_amount = 4
-
-examples_amount = 8
-
-output_amount = 4
-
-np.random.seed(1)
-
+# l1 = 0
+# X = np.array([
+#     [0, 0, 3, 0],
+#     [0, 0, 0, 3],
+#     [0, 0, 3, 3],
+#     [3, 3, 3, 0],
+#     [3, 3, 0, 3],
+#     [3, 3, 0, 0],
+#     [0, 0, 0, 0],
+#     [2, 1, 1, 2],
+#     [0, 3, 3, 0],
+#     [5, 3, 1, 2],
+#               ])
+#
+# y = np.array([
+#     [0, 1, 0, 0],
+#     [0, 0, 1, 0],
+#     [0, 1, 1, 0],
+#     [1, 0, 0, 0],
+#     [0, 0, 0, 1],
+#     [1, 0, 0, 1],
+#     [0, 0, 0, 0],
+#     [0, 0, 1, 1],
+#     [1, 1, 0, 0],
+#     [1, 0, 0, 1],
+# ])
+#
+# input_amount = 4
+#
+# examples_amount = 4
+#
+# output_amount = 4
+#
+# np.random.seed(1)
+#
 # # случайно инициализируем веса, в среднем - 0
 # syn0 = 2 * np.random.random((input_amount, examples_amount)) - 1
 # syn1 = 2 * np.random.random((examples_amount, output_amount)) - 1
@@ -89,6 +91,16 @@ C = [25, 12, 1, 2]
 l0 = C
 l1 = nonlin(np.dot(l0, syn0))
 l2 = nonlin(np.dot(l1, syn1))
-print("Выходные данные после тренировки:")
+# print("Выходные данные после тренировки:")
+#
+# print(l2)
 
-print(l2)
+net = Network(4, 4)
+net.add_layer(4)
+net.add_layer(4)
+net.connect()
+
+net.activate(C)
+
+
+c = 4
