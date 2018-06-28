@@ -46,3 +46,18 @@ class GameObject(pygame.sprite.Sprite):
     def get_cell(self, x , y):
         return self.map.get_cell(x, y)
 
+    def set_stat(self, stat, value):
+        if hasattr(self, stat):
+            setattr(self, stat, value)
+
+    def get_stat(self, stat):
+        if hasattr(self, stat):
+            return getattr(self, stat)
+
+    def get_stats(self, stats):
+        output_stats = {}
+        for stat in stats:
+            if hasattr(self, stat):
+                output_stats[stat] = getattr(self, stat)
+        return output_stats
+

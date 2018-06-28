@@ -16,6 +16,11 @@ class MobObject(GameObject):
     stock = None
     inventory = None
 
+    # Stats
+    health = 0
+    satiety = 0
+    # Stats END
+
     def __init__(self, title, screen, game_controller, game_map, position, size, speed=1, image_path='', inventory_size=0):
         super().__init__(title, screen, game_controller, game_map, position, size, white)
         self.speed = speed
@@ -126,7 +131,6 @@ class MobObject(GameObject):
             items.pop(-1)
             for item in items:
                 if self.catch_item(item):
-                    cell.remove_object(item)
                     self.game_controller.remove_item(item)
             self.action = 'wait'
         else:
@@ -140,6 +144,7 @@ class MobObject(GameObject):
                 self.update_move()
         else:
             self.stop()
+            self.update_self_task()
 
     def go_to_next_step(self):
         next_step = self.path[0]
@@ -220,14 +225,14 @@ class MobObject(GameObject):
         step_x = self.speed * step * self.vectors[0]
         step_y = self.speed * step * self.vectors[1]
         if step_x > 0:
-            self.rect.x = self.rect.x + math.ceil(step_x)
+            self.rect.x += math.ceil(step_x)
         else:
-            self.rect.x = self.rect.x + math.floor(step_x)
+            self.rect.x += math.floor(step_x)
 
         if step_y > 0:
-            self.rect.y = self.rect.y + math.ceil(step_y)
+            self.rect.y += math.ceil(step_y)
         else:
-            self.rect.y = self.rect.y + math.floor(step_y)
+            self.rect.y += math.floor(step_y)
 
     def is_destination_x(self, cell):
         if self.destination[0] > self.coord[0]:
@@ -249,6 +254,50 @@ class MobObject(GameObject):
 
         return False
 
+    def update_mob_condition(self):
+        if self.satiety <= 0:
+            self.health -= 10
+            if self.health <= 0:
+                self.game_controller.remove_mob(self)
+        else:
+            self.satiety -= 10
+
+    def update_self_task(self):
+        if self.satiety < 50:
+            ate = self.eat_full()
+            if not ate:
+                self.find_food()
+
+    def eat(self):
+        info = self.inventory.get_info()
+        for index, item in info['items'].items():
+            if item['amount']:
+                if item['object'].get_edible():
+                    self.remove_item(item['object'])
+                    self.satiety += item['object'].get_stat('satiety')
+                    return True
+
+        return False
+
+    def eat_full(self):
+        ate = False
+        info = self.inventory.get_info()
+        for index, item in info['items'].items():
+            if item['amount']:
+                if item['object'].get_edible():
+                    while self.satiety < 100 and item['amount'] > 0:
+                        self.remove_item(item['object'])
+                        self.satiety += item['object'].get_stat('satiety')
+                        item['amount'] -= 1
+                        if self.satiety >= 100:
+                            break
+                    ate = True
+
+        return ate
+
+    def find_food(self):
+        self.go_left()
+
     def draw_path(self, cell_size):
         if self.path:
             for point in self.path:
@@ -259,6 +308,9 @@ class MobObject(GameObject):
 
     def catch_item(self, item):
         return self.inventory.add_items(item, 1)
+
+    def remove_item(self, item):
+        return self.inventory.delete_items(item, 1)
 
     def get_inventory_info(self):
         return self.inventory.get_info()
