@@ -1,54 +1,31 @@
 import numpy as np
 from Networks.Network import *
 
-# np.set_printoptions(threshold=np.nan, precision=2, suppress=True)
+np.set_printoptions(threshold=np.nan, precision=6, suppress=True)
 
 
 # Сигмоида
 def nonlin(x, deriv=False):
     if deriv:
-        return x * (1 - x)
+        return nonlin(x) * (1 - nonlin(x))
     return 1 / (1 + np.exp(-x))
 
-
-# l1 = 0
-# X = np.array([
-#     [0, 0, 3, 0],
-#     [0, 0, 0, 3],
-#     [0, 0, 3, 3],
-#     [3, 3, 3, 0],
-#     [3, 3, 0, 3],
-#     [3, 3, 0, 0],
-#     [0, 0, 0, 0],
-#     [2, 1, 1, 2],
-#     [0, 3, 3, 0],
-#     [5, 3, 1, 2],
-#               ])
 #
-# y = np.array([
-#     [0, 1, 0, 0],
-#     [0, 0, 1, 0],
-#     [0, 1, 1, 0],
-#     [1, 0, 0, 0],
-#     [0, 0, 0, 1],
-#     [1, 0, 0, 1],
-#     [0, 0, 0, 0],
-#     [0, 0, 1, 1],
-#     [1, 1, 0, 0],
-#     [1, 0, 0, 1],
-# ])
+# X = np.array([[0, 0, 1],
+#               [0, 1, 1],
+#               [1, 0, 1],
+#               [1, 1, 1]])
 #
-# input_amount = 4
-#
-# examples_amount = 4
-#
-# output_amount = 4
+# y = np.array([[0],
+#               [1],
+#               [1],
+#               [0]])
 #
 # np.random.seed(1)
 #
 # # случайно инициализируем веса, в среднем - 0
-# syn0 = 2 * np.random.random((input_amount, examples_amount)) - 1
-# syn1 = 2 * np.random.random((examples_amount, output_amount)) - 1
+# syn0 = 2 * np.random.random((3, 4)) - 1
+# syn1 = 2 * np.random.random((4, 1)) - 1
 #
 # for j in range(60000):
 #
@@ -60,8 +37,8 @@ def nonlin(x, deriv=False):
 #     # как сильно мы ошиблись относительно нужной величины?
 #     l2_error = y - l2
 #
-#     # if (j % 10000) == 0:
-#     #     print("Error:" + str(np.mean(np.abs(l2_error))))
+#     if (j % 10000) == 0:
+#         print("Error:" + str(np.mean(np.abs(l2_error))))
 #
 #     # в какую сторону нужно двигаться?
 #     # если мы были уверены в предсказании, то сильно менять его не надо
@@ -76,31 +53,40 @@ def nonlin(x, deriv=False):
 #
 #     syn1 += l1.T.dot(l2_delta)
 #     syn0 += l0.T.dot(l1_delta)
-#
 # print("Выходные данные после тренировки:")
 # # print(l2)
 #
-# np.savetxt('syn0.txt', syn0)
-# np.savetxt('syn1.txt', syn1)
 
-syn0 = np.loadtxt('syn0.txt')
-syn1 = np.loadtxt('syn1.txt')
+input = np.array([[0, 0],
+              [0, 1],
+              [1, 0],
+              [1, 1]])
 
-C = [25, 12, 1, 2]
+output = np.array([
+    [0],
+    [1],
+    [1],
+    [0],
+    ])
 
-l0 = C
-l1 = nonlin(np.dot(l0, syn0))
-l2 = nonlin(np.dot(l1, syn1))
-# print("Выходные данные после тренировки:")
-#
-# print(l2)
 
-net = Network(4, 4)
-net.add_layer(4)
-net.add_layer(4)
+net = Network('1', 2, 1)
+net.add_layer(2)
 net.connect()
 
-net.activate(C)
+net.add_data_set(input, output)
 
+for j in range(10000):
+    net.learn()
+
+net.save()
+# net = net.load()
+
+C = [0, 1]
+
+for c in input:
+    print(c)
+    net.activate(c)
+    net.print_output()
 
 c = 4
