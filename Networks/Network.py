@@ -1,6 +1,8 @@
 import numpy as np
 import _pickle as pickle
 import copy
+
+from collections import OrderedDict
 from ConstantVariables import *
 
 
@@ -11,7 +13,7 @@ class Network:
         self.outputs = outputs
         self.layers_info = []
         self.layers = {}
-        self.connections = {}
+        self.connections = OrderedDict()
         self.input_data_set = []
         self.output_data_set = []
 
@@ -29,82 +31,92 @@ class Network:
         current_layer = self.inputs
         current_layer_name = 'input'
         for index, value in enumerate(self.layers_info):
-            self.layers['hidden_' + str(index + 1)] = 0
-            self.connections[current_layer_name +'_to_' + 'hidden_' + str(index + 1)] = 2 * np.random.random((current_layer, value)) - 1
+            self.layers['hidden_' + str(index)] = 0
+            self.connections[current_layer_name +'_to_' + 'hidden_' + str(index)] = 2 * np.random.random((current_layer, value)) - 1
             current_layer = value
-            current_layer_name = 'hidden_' + str(index + 1)
+            current_layer_name = 'hidden_' + str(index)
 
         self.layers['output'] = 0
-        self.connections[current_layer_name +'_to_out'] = 2 * np.random.random((current_layer, self.outputs)) - 1
+        self.connections[current_layer_name +'_to_output'] = 2 * np.random.random((current_layer, self.outputs)) - 1
 
     def activate(self, input_data):
-        if len(input_data) == self.inputs:
-            self.layers['input'] = input_data
-            current_layer_name = 'input'
-            for index, value in enumerate(self.layers_info):
-                connections = self.connections[current_layer_name +'_to_' + 'hidden_' + str(index + 1)]
+        self.layers['input'] = input_data
+        current_layer_name = 'input'
+        for index, value in enumerate(self.layers_info):
+            connections = self.connections[current_layer_name +'_to_' + 'hidden_' + str(index)]
 
-                self.layers['hidden_' + str(index + 1)] = self.nonlin(np.dot(self.layers[current_layer_name], connections))
+            self.layers['hidden_' + str(index)] = self.sigmoid(np.dot(self.layers[current_layer_name], connections))
 
-                current_layer_name = 'hidden_' + str(index + 1)
+            current_layer_name = 'hidden_' + str(index)
 
-            connections = self.connections[current_layer_name + '_to_out']
-            self.layers['output'] = self.nonlin(np.dot(self.layers[current_layer_name], connections))
+        connections = self.connections[current_layer_name + '_to_output']
+        self.layers['output'] = self.sigmoid(np.dot(self.layers[current_layer_name], connections))
 
-    def learn(self, learning_rate=0.05):
-        for input_data, output_data in zip(self.input_data_set, self.output_data_set):
-            self.activate(input_data)
+    def learn(self, learning_rate=0.1):
+        self.activate(self.input_data_set)
 
-            l2_error = output_data - self.layers['output']
+        l2_error = self.output_data_set - self.layers['output']
+        print("Error:" + str(np.mean(np.abs(l2_error))))
 
-            # print("Error:" + str(np.mean(np.abs(l2_error))))
+        error = l2_error
+        delta = None
+        for name in reversed(self.connections):
+            start, end = name.split('_to_')
 
-            #производная сигмоиды
-            # sygmoid = self.nonlin(self.layers['output'], deriv=True)
-            # l2_delta = l2_error * sygmoid
-            #
-            # self.connections['hidden_1_to_out'][0] += self.layers['hidden_1'][0]*l2_delta*learning_rate
-            # self.connections['hidden_1_to_out'][1] += self.layers['hidden_1'][1]*l2_delta*learning_rate
-            # self.connections['hidden_1_to_out'] += self.layers['hidden_1'].T.dot(l2_delta)
-            (self.connections['hidden_1_to_out'], l2_delta) = self.get_weight(
-                self.connections['hidden_1_to_out'],
-                self.layers['hidden_1'],
-                self.layers['output'],
-                l2_error,
+            self.connections[name], delta = self.get_weight(
+                self.connections[name],
+                self.layers[start],
+                self.layers[end],
+                error,
                 learning_rate
             )
 
-            # как сильно значения l1 влияют на ошибки в l2?
-            l1_error = l2_delta.dot(self.connections['hidden_1_to_out'].T)
-
-            # в каком направлении нужно двигаться, чтобы прийти к l1?
-            # если мы были уверены в предсказании, то сильно менять его не надо
-            # l1_delta = l1_error * self.nonlin(self.layers['hidden_1'], deriv=True)
-
-            (self.connections['input_to_hidden_1'], l1_delta) = self.get_weight(
-                self.connections['input_to_hidden_1'],
-                self.layers['input'],
-                self.layers['hidden_1'],
-                l1_error,
-                learning_rate
-            )
-
-            # self.connections['input_to_hidden_1'] += self.layers['input'].T.dot(l1_delta)
+            error = delta.dot(self.connections[name].T)
 
     def get_weight(self, connections_layer, start_layer, end_layer, error, learning_rate):
-        delta = error * self.nonlin(end_layer, deriv=True)
-        for (x, y), connections in np.ndenumerate(connections_layer):
-            temp = start_layer[x]
-            deltas = delta[y]
-            mult = np.dot(deltas, temp)
-            connections_layer[x][y] -= mult * learning_rate
+        delta = error * self.sigmoid(end_layer, deriv=True)
 
-        return [connections_layer, delta]
+        connections_layer += start_layer.T.dot(delta) * learning_rate
 
-    def print_output(self):
-        print(self.layers['output'])
+        return connections_layer, delta
 
-    def nonlin(self, x, deriv=False):
+    def print_output(self, converted=False):
+        output = self.get_output(convert=converted)
+        if converted:
+            for result in output:
+                print(result)
+                if result[0]:
+                    print('up')
+                if result[1]:
+                    print('right')
+                if result[2]:
+                    print('down')
+                if result[3]:
+                    print('left')
+                print('---------')
+        else:
+            print(self.layers['output'])
+
+    def convert_output(self):
+        if len(self.layers['output'].shape) > 1:
+            for (x, y), result in np.ndenumerate(self.layers['output']):
+                if result > 0.7:
+                    self.layers['output'][x][y] = 1
+                else:
+                    self.layers['output'][x][y] = 0
+        else:
+            for x, result in np.ndenumerate(self.layers['output']):
+                if result > 0.7:
+                    self.layers['output'][x] = 1
+                else:
+                    self.layers['output'][x] = 0
+
+    def get_output(self, convert=False):
+        if convert:
+            self.convert_output()
+        return self.layers['output']
+
+    def sigmoid(self, x, deriv=False):
         if deriv:
             return x * (1 - x)
         return 1 / (1 + np.exp(-x))

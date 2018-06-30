@@ -3,7 +3,7 @@ import numpy as np
 
 def nonlin(x, deriv=False):
     if (deriv == True):
-        return f(x) * (1 - f(x))
+        return x * (1 - x)
 
     return 1 / (1 + np.exp(-x))
 
@@ -24,7 +24,7 @@ np.random.seed(1)
 syn0 = 2 * np.random.random((3, 4)) - 1
 syn1 = 2 * np.random.random((4, 1)) - 1
 
-for j in xrange(60000):
+for j in range(60000):
 
     # проходим вперёд по слоям 0, 1 и 2
     l0 = X
@@ -35,8 +35,7 @@ for j in xrange(60000):
     l2_error = y - l2
 
     if (j % 10000) == 0:
-        print
-        "Error:" + str(np.mean(np.abs(l2_error)))
+        print("Error:" + str(np.mean(np.abs(l2_error))))
 
     # в какую сторону нужно двигаться?
     # если мы были уверены в предсказании, то сильно менять его не надо
