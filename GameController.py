@@ -1,3 +1,6 @@
+import math
+
+
 class GameController:
     screen = None
     mobs_group = None
@@ -75,3 +78,20 @@ class GameController:
         cell.remove_object(item_object)
 
         item_object.kill()
+
+    def get_items(self):
+        return self.items_group.sprites()
+
+    def get_nearest_item(self, point):
+        length = 500
+        nearest_item = None
+        for item in self.get_items():
+            coord = item.coord
+            length_to_item = math.sqrt(math.pow(coord[0] - point[0], 2) + math.pow(coord[1] - point[1], 2))
+            if length_to_item <= length:
+                nearest_item = item
+                length = length_to_item
+
+        return nearest_item
+
+

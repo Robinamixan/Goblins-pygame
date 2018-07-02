@@ -5,6 +5,7 @@ import copy
 from GameObject import *
 from InventoryObjects.InventoryObject import *
 from ConstantVariables import *
+from Networks.Network import *
 
 
 class MobObject(GameObject):
@@ -116,6 +117,18 @@ class MobObject(GameObject):
 
     def go_down(self):
         self.set_destination(self.destination[0], self.destination[1] + 1)
+
+    def go_left_up(self):
+        self.set_destination(self.destination[0] - 1, self.destination[1] - 1)
+
+    def go_left_down(self):
+        self.set_destination(self.destination[0] - 1, self.destination[1] + 1)
+
+    def go_right_up(self):
+        self.set_destination(self.destination[0] + 1, self.destination[1] - 1)
+
+    def go_right_down(self):
+        self.set_destination(self.destination[0] + 1, self.destination[1] + 1)
 
     # Stops mob on his current cell
     def stop(self):
@@ -296,7 +309,40 @@ class MobObject(GameObject):
         return ate
 
     def find_food(self):
-        self.go_left()
+        item = self.game_controller.get_nearest_item(self.destination)
+
+        if item:
+            net = Network('1', 4, 4)
+            net = net.load()
+            data = [self.destination[0], self.destination[1], item.coord[0], item.coord[1], 0, 0, 0, 0]
+            net.activate(data)
+            actions = net.get_output(True)
+
+            if actions[3] and actions[0]:
+                self.go_left_up()
+                return
+            if actions[3] and actions[2]:
+                self.go_left_down()
+                return
+            if actions[1] and actions[0]:
+                self.go_right_up()
+                return
+            if actions[1] and actions[2]:
+                self.go_right_down()
+                return
+
+            if actions[0]:
+                self.go_up()
+                return
+            if actions[1]:
+                self.go_right()
+                return
+            if actions[2]:
+                self.go_down()
+                return
+            if actions[3]:
+                self.go_left()
+                return
 
     def draw_path(self, cell_size):
         if self.path:
