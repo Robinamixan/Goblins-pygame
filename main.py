@@ -63,7 +63,7 @@ all_static = pygame.sprite.Group()
 game_controller = GameController(game_screen, all_mobs, all_items, all_static)
 
 game_map = MapObject('map_test', game_screen, game_controller, (50, 50), map_cell_size, 30, 15)
-game_map.create_map_from_file('test_map.txt')
+game_map.create_map_from_file('test_map_2.txt')
 
 mob_creator = MobCreator(game_screen, game_map, game_controller)
 item_creator = ItemCreator(game_screen, game_map, game_controller)

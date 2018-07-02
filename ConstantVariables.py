@@ -8,3 +8,4 @@ dark_green = (168, 204, 85)
 red = (255, 0, 0, 125)
 brow = (175, 55, 0)
 map_cell_size = 25
+networks_directory_save = 'Networks/Saves/'
