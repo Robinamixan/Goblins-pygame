@@ -20,6 +20,7 @@ class MobObject(GameObject):
     # Stats
     health = 0
     satiety = 0
+    passable = False
     # Stats END
 
     def __init__(self, title, screen, game_controller, game_map, position, size, speed=1, image_path='', inventory_size=0):
@@ -27,7 +28,7 @@ class MobObject(GameObject):
         self.speed = speed
 
         cell = self.get_current_cell()
-        cell.set_object(self, False)
+        cell.set_object(self, self.passable)
 
         self.rect.x = cell.x
         self.rect.y = cell.y
@@ -310,6 +311,15 @@ class MobObject(GameObject):
 
     def find_food(self):
         item = self.game_controller.get_nearest_item(self.destination)
+
+        if item.coord == self.destination:
+            cell = self.get_destination_cell()
+            items = copy.copy(cell.contain)
+            items.pop(-1)
+            for item in items:
+                if self.catch_item(item):
+                    self.game_controller.remove_item(item)
+            return
 
         if item:
             net = Network('1', 4, 4)

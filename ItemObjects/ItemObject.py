@@ -11,7 +11,7 @@ class ItemObject(GameObject):
     def __init__(self, title, screen, game_controller, game_map, position, size, image_path):
         super().__init__(title, screen, game_controller, game_map, position, size, white)
         cell = self.get_current_cell()
-        cell.set_object(self, True)
+        cell.set_object(self, self.passable)
 
         self.rect.x = cell.x
         self.rect.y = cell.y

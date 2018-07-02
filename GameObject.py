@@ -12,6 +12,7 @@ class GameObject(pygame.sprite.Sprite):
     map = None
     color = (0, 0, 0)
     game_controller = None
+    passable = True
 
     def __init__(self, title, screen, game_controller, game_map, position, size, color):
         pygame.sprite.Sprite.__init__(self)
