@@ -83,17 +83,27 @@ class Network:
     def print_output(self, converted=False):
         output = self.get_output(convert=converted)
         if converted:
-            for result in output:
-                print(result)
-                if result[0]:
+            if output.shape == (4,):
+                if output[0]:
                     print('up')
-                if result[1]:
+                if output[1]:
                     print('right')
-                if result[2]:
+                if output[2]:
                     print('down')
-                if result[3]:
+                if output[3]:
                     print('left')
-                print('---------')
+            else:
+                for result in output:
+                    print(result)
+                    if result[0]:
+                        print('up')
+                    if result[1]:
+                        print('right')
+                    if result[2]:
+                        print('down')
+                    if result[3]:
+                        print('left')
+                    print('---------')
         else:
             print(self.layers['output'])
 
