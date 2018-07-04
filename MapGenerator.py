@@ -2,8 +2,8 @@ import random
 import json
 
 
-width_cells = 15
-height_cells = 30
+width_cells = 25
+height_cells = 45
 cells = ['-'] * width_cells
 for i in range(0, width_cells):
     cells[i] = [0] * height_cells

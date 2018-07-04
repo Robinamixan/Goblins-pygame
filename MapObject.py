@@ -131,4 +131,5 @@ class CellObject:
 
     def remove_object(self, map_object):
         self.contain.remove(map_object)
-        self.passable = True
+        if not map_object.passable:
+            self.passable = True

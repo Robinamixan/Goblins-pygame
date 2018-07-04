@@ -5,6 +5,7 @@ import copy
 from GameObject import *
 from InventoryObjects.InventoryObject import *
 from ConstantVariables import *
+from Networks.Network import *
 
 
 class MobObject(GameObject):
@@ -19,6 +20,7 @@ class MobObject(GameObject):
     # Stats
     health = 0
     satiety = 0
+    passable = False
     # Stats END
 
     def __init__(self, title, screen, game_controller, game_map, position, size, speed=1, image_path='', inventory_size=0):
@@ -26,7 +28,7 @@ class MobObject(GameObject):
         self.speed = speed
 
         cell = self.get_current_cell()
-        cell.set_object(self, False)
+        cell.set_object(self, self.passable)
 
         self.rect.x = cell.x
         self.rect.y = cell.y
@@ -116,6 +118,18 @@ class MobObject(GameObject):
 
     def go_down(self):
         self.set_destination(self.destination[0], self.destination[1] + 1)
+
+    def go_left_up(self):
+        self.set_destination(self.destination[0] - 1, self.destination[1] - 1)
+
+    def go_left_down(self):
+        self.set_destination(self.destination[0] - 1, self.destination[1] + 1)
+
+    def go_right_up(self):
+        self.set_destination(self.destination[0] + 1, self.destination[1] - 1)
+
+    def go_right_down(self):
+        self.set_destination(self.destination[0] + 1, self.destination[1] + 1)
 
     # Stops mob on his current cell
     def stop(self):
@@ -296,7 +310,49 @@ class MobObject(GameObject):
         return ate
 
     def find_food(self):
-        self.go_left()
+        item = self.game_controller.get_nearest_item(self.destination)
+
+        if item.coord == self.destination:
+            cell = self.get_destination_cell()
+            items = copy.copy(cell.contain)
+            items.pop(-1)
+            for item in items:
+                if self.catch_item(item):
+                    self.game_controller.remove_item(item)
+            return
+
+        if item:
+            net = Network('1', 4, 4)
+            net = net.load()
+            data = [self.destination[0], self.destination[1], item.coord[0], item.coord[1], 0, 0, 0, 0]
+            net.activate(data)
+            actions = net.get_output(True)
+
+            if actions[3] and actions[0]:
+                self.go_left_up()
+                return
+            if actions[3] and actions[2]:
+                self.go_left_down()
+                return
+            if actions[1] and actions[0]:
+                self.go_right_up()
+                return
+            if actions[1] and actions[2]:
+                self.go_right_down()
+                return
+
+            if actions[0]:
+                self.go_up()
+                return
+            if actions[1]:
+                self.go_right()
+                return
+            if actions[2]:
+                self.go_down()
+                return
+            if actions[3]:
+                self.go_left()
+                return
 
     def draw_path(self, cell_size):
         if self.path:

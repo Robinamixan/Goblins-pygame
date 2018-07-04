@@ -5,6 +5,7 @@ from MobObjects.MobCreator import *
 from GameController import *
 from ItemObjects.ItemCreator import *
 from MapObject import *
+from Camera import *
 from ConstantVariables import *
 
 
@@ -56,25 +57,25 @@ pos = [0, 0]
 win_coord = [0, 0]
 
 game_screen = set_window_settings(screen_size, 'My PyGame Windows')
+camera = Camera(1000, 1000)
 
 all_mobs = pygame.sprite.Group()
 all_items = pygame.sprite.Group()
 all_static = pygame.sprite.Group()
-game_controller = GameController(game_screen, all_mobs, all_items, all_static)
+game_controller = GameController(game_screen, camera, all_mobs, all_items, all_static)
 
-game_map = MapObject('map_test', game_screen, game_controller, (50, 50), map_cell_size, 30, 15)
+game_map = MapObject('map_test', game_screen, game_controller, (50, 50), map_cell_size, 45, 25)
 game_map.create_map_from_file('test_map_2.txt')
 
 mob_creator = MobCreator(game_screen, game_map, game_controller)
 item_creator = ItemCreator(game_screen, game_map, game_controller)
 
-first_gob = mob_creator.create_goblin('first goblin', (1, 1), 5)
-second_gob = mob_creator.create_goblin('second goblin', (19, 6), 3)
-game_controller.add_mob(first_gob)
-game_controller.add_mob(second_gob)
+mob_creator.create_goblin('first goblin', (1, 1), 5)
+mob_creator.create_goblin('second goblin', (19, 6), 3)
+mob_creator.create_goblin('third goblin', (37, 20), 3)
 
 for i in range(3, 12):
-    game_controller.add_item(item_creator.create_meat((i, 12)))
+    item_creator.create_meat((i, 12))
 
 clock = pygame.time.Clock()
 current_second = 0
@@ -100,6 +101,15 @@ while not closeWindow:
                         wall = cell.get_object()
                         cell.remove_object(wall)
                         game_controller.remove_static_object(wall)
+                # else:
+                #     if event.key == locals.K_d:
+                #         game_controller.camera.move_right(10)
+                #     if event.key == locals.K_w:
+                #         game_controller.camera.move_up(10)
+                #     if event.key == locals.K_s:
+                #         game_controller.camera.move_down(10)
+                #     if event.key == locals.K_a:
+                #         game_controller.camera.move_left(10)
 
         if event.type == locals.MOUSEBUTTONDOWN:
             if event.button == 1:
@@ -113,9 +123,12 @@ while not closeWindow:
                     focus.set_destination(pos[0], pos[1])
 
     second = int(pygame.time.get_ticks() / 1000)
-    if current_second != second:
-        current_second = second
+    if game_controller.get_time() != second:
+        game_controller.update_timer(second)
         game_controller.update_mobs_condition()
+        item_creator.generate_items_around((5, 5))
+        item_creator.generate_items_around((17, 7))
+        item_creator.generate_items_around((37, 20))
 
     game_controller.update_mobs()
 
@@ -134,26 +147,27 @@ while not closeWindow:
         if isinstance(focus, MobObject):
             view_label(game_screen, (150, 15), focus.get_name() + ' - ' + focus.get_action())
 
-            view_label(game_screen, (25, 450),
+            view_y_with = 750
+            view_label(game_screen, (25, view_y_with),
                        'coords:      [' + str(int(focus.coord[0])) + ', ' + str(int(focus.coord[1])) + ']')
 
-            view_label(game_screen, (25, 475),
+            view_label(game_screen, (25, view_y_with + 25),
                        'destination: [' +
                        str(int(focus.destination[0])) + ', ' +
                        str(int(focus.destination[1])) + ']'
                        )
 
-            view_label(game_screen, (25, 500),
+            view_label(game_screen, (25, view_y_with + 50),
                        'vectors:     [' + str(int(focus.vectors[0])) + ', ' + str(int(focus.vectors[1])) + ']')
 
-            view_label(game_screen, (25, 525),
+            view_label(game_screen, (25, view_y_with + 75),
                        'position:    [' + str(int(focus.rect.x)) + ', ' + str(int(focus.rect.y)) + ']')
 
-            view_label(game_screen, (25, 550), 'path: ' + str(focus.path))
+            view_label(game_screen, (25, view_y_with + 100), 'path: ' + str(focus.path))
 
-            view_inventory_info((25, 575), focus.get_inventory_info())
+            view_inventory_info((25, view_y_with + 125), focus.get_inventory_info())
 
-            view_stats_info((400, 450), focus.get_stats(['health', 'satiety']))
+            view_stats_info((400, view_y_with), focus.get_stats(['health', 'satiety']))
 
         else:
             view_label(game_screen, (200, 15), focus.get_name())
@@ -162,7 +176,7 @@ while not closeWindow:
 
     view_label(game_screen, (400, 5), 'x: ' + str(win_coord[0]) + '[' + str(pos[0]) + ']')
     view_label(game_screen, (400, 30), 'y: ' + str(win_coord[1]) + '[' + str(pos[1]) + ']')
-    view_label(game_screen, (15, 15), str(current_second))
+    view_label(game_screen, (15, 15), str(game_controller.get_time()))
 
     pygame.display.update()
 
