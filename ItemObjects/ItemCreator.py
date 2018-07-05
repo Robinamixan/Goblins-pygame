@@ -24,5 +24,14 @@ class ItemCreator:
         if self.game_controller.get_time() % speed == 0:
             rand_x = random.randint((-1) * radius, radius)
             rand_y = random.randint((-1) * radius, radius)
+            cell = self.get_cell(rand_x, rand_y)
+
+            while not cell.is_passable():
+                rand_x = random.randint((-1) * radius, radius)
+                rand_y = random.randint((-1) * radius, radius)
+                cell = self.get_cell(rand_x, rand_y)
+
             self.create_meat((point[0] + rand_x, point[1] + rand_y))
 
+    def get_cell(self, x, y):
+        return self.map.get_cell(x, y)

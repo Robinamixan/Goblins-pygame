@@ -1,4 +1,6 @@
 import math
+import pygame
+import json
 
 
 class GameController:
@@ -16,6 +18,7 @@ class GameController:
         self.mobs_group = mobs_group
         self.items_group = items_group
         self.static_group = static_group
+        open('rate.txt', 'w').close()
 
     #time
     def update_timer(self, second):
@@ -64,6 +67,8 @@ class GameController:
         cell = mob_object.get_destination_cell()
         cell.remove_object(mob_object)
 
+        self.save_mob_result(mob_object)
+
         mob_object.kill()
         if self.focused == mob_object:
             self.focused = None
@@ -74,6 +79,17 @@ class GameController:
     def update_mobs_condition(self):
         for mob in self.mobs_group.sprites():
             mob.update_mob_condition()
+
+    def save_mob_result(self, mob):
+        with open('rate.txt', 'a') as file:
+            time = pygame.time.get_ticks() / 1000
+
+            json_string = json.dumps({'title': mob.title, 'time': str(time)})
+            file.write(json_string + '\n')
+
+    def save_mobs_result(self):
+        for sprite in self.mobs_group:
+            self.save_mob_result(sprite)
     '''
         Items methods
     '''

@@ -1,88 +1,122 @@
-import numpy as np
+import json
+import random
+from Networks.Network import *
 
 
-def nonlin(x, deriv=False):
-    if (deriv == True):
-        return x * (1 - x)
+class Evolution:
+    def __init__(self):
+        self.generation = {}
+        self.next_generation = {}
+        self.need_replace = {}
+        self.need_mutate = {}
+        self.amount_members = 0
 
-    return 1 / (1 + np.exp(-x))
+    def add_generation_member(self, network, scope):
+        self.amount_members += 1
+        self.generation[self.amount_members] = {}
+        self.generation[self.amount_members]['network'] = network
+        self.generation[self.amount_members]['scope'] = scope
 
+    def add_member(self, destination, index, network, scope):
+        if destination == 'generation':
+            self.generation[index] = {}
+            self.generation[index]['network'] = network
+            self.generation[index]['scope'] = scope
+        elif destination == 'next_generation':
+            self.next_generation[index] = {}
+            self.next_generation[index]['network'] = network
+            self.next_generation[index]['scope'] = scope
+        elif destination == 'need_replace':
+            self.need_replace[index] = {}
+            self.need_replace[index]['network'] = network
+            self.need_replace[index]['scope'] = scope
+        elif destination == 'need_mutate':
+            self.need_mutate[index] = {}
+            self.need_mutate[index]['network'] = network
+            self.need_mutate[index]['scope'] = scope
 
-X = np.array([[0, 0, 1],
-              [0, 1, 1],
-              [1, 0, 1],
-              [1, 1, 1]])
+    def get_best(self):
+        best_index = 0
+        max_scope = 0
+        network = None
+        for index, item in self.generation.items():
+            if float(item['scope']) > max_scope:
+                best_index = index
+                max_scope = float(item['scope'])
+                network = item['network']
+        self.generation[best_index]['scope'] = '0'
+        return max_scope, network
 
-y = np.array([[0],
-              [1],
-              [1],
-              [0]])
+    def activate(self):
+        file = open('rate.txt', 'r')
+        for json_string in file:
+            result = json.loads(json_string)
+            network = Network(result['title'], 8, 4)
+            network = network.load()
+            self.add_generation_member(network, result['time'])
+        file.close()
 
-np.random.seed(1)
+    def sort_members(self):
+        scope, network = self.get_best()
+        self.add_member('next_generation', 0, network, scope)
 
-# случайно инициализируем веса, в среднем - 0
-syn0 = 2 * np.random.random((3, 4)) - 1
-syn1 = 2 * np.random.random((4, 1)) - 1
+        scope, network = self.get_best()
+        self.add_member('next_generation', 1, network, scope)
 
-for j in range(60000):
+        scope, network = self.get_best()
+        self.add_member('need_replace', 0, network, scope)
 
-    # проходим вперёд по слоям 0, 1 и 2
-    l0 = X
-    l1 = nonlin(np.dot(l0, syn0))
-    l2 = nonlin(np.dot(l1, syn1))
+        scope, network = self.get_best()
+        self.add_member('need_replace', 1, network, scope)
 
-    # как сильно мы ошиблись относительно нужной величины?
-    l2_error = y - l2
+        scope, network = self.get_best()
+        self.add_member('need_mutate', 0, network, scope)
 
-    if (j % 10000) == 0:
-        print("Error:" + str(np.mean(np.abs(l2_error))))
+    def set_children(self):
+        first_parent = self.next_generation[0]['network']
+        second_parent = self.next_generation[1]['network']
 
-    # в какую сторону нужно двигаться?
-    # если мы были уверены в предсказании, то сильно менять его не надо
-    l2_delta = l2_error * nonlin(l2, deriv=True)
+        first_parent.name = self.need_replace[0]['network'].name
+        second_parent.name = self.need_replace[1]['network'].name
 
-    # как сильно значения l1 влияют на ошибки в l2?
-    l1_error = l2_delta.dot(syn1.T)
+        for first_name, first_connection in first_parent.connections.items():
+            for second_name, second_connection in second_parent.connections.items():
+                if first_name == second_name:
+                    first_parts = np.array_split(first_connection, 4)
+                    second_parts = np.array_split(second_connection, 4)
 
-    # в каком направлении нужно двигаться, чтобы прийти к l1?
-    # если мы были уверены в предсказании, то сильно менять его не надо
-    l1_delta = l1_error * nonlin(l1, deriv=True)
+                    temp = first_parts[1]
+                    first_parts[1] = second_parts[1]
+                    second_parts[1] = temp
 
-    syn1 += l1.T.dot(l2_delta)
-    syn0 += l0.T.dot(l1_delta)
+                    temp = first_parts[3]
+                    first_parts[3] = second_parts[3]
+                    second_parts[3] = temp
 
-class PartyNN(object):
-    def __init__(self, learning_rate=0.1):
-        self.weights_0_1 = np.random.normal(0.0, 2 ** -0.5, (2, 3))
-        self.weights_1_2 = np.random.normal(0.0, 1, (1, 2))
-        self.sigmoid_mapper = np.vectorize(self.sigmoid)
-        self.learning_rate = np.array([learning_rate])
+                    first_changed = np.concatenate(first_parts, axis=0)
+                    second_changed = np.concatenate(first_parts, axis=0)
 
-    def sigmoid(self, x):
-        return 1 / (1 + np.exp(-x))
+                    first_parent.connections[first_name] = first_changed
+                    second_parent.connections[second_name] = second_changed
 
-    def predict(self, inputs):
-        inputs_1 = np.dot(self.weights_0_1, inputs)
-        outputs_1 = self.sigmoid_mapper(inputs_1)
+                    first_parent.save()
+                    second_parent.save()
 
-        inputs_2 = np.dot(self.weights_1_2, outputs_1)
-        outputs_2 = self.sigmoid_mapper(inputs_2)
-        return outputs_2
+        mutant = self.next_generation[0]['network']
+        name = self.need_mutate[0]['network'].name
+        self.mutate(mutant, name, 0.5)
 
-    def train(self, inputs, expected_predict):
-        inputs_1 = np.dot(self.weights_0_1, inputs)
-        outputs_1 = self.sigmoid_mapper(inputs_1)
+        mutant = self.next_generation[1]['network']
+        name = self.next_generation[1]['network'].name
+        self.mutate(mutant, name, 0.001)
 
-        inputs_2 = np.dot(self.weights_1_2, outputs_1)
-        outputs_2 = self.sigmoid_mapper(inputs_2)
-        actual_predict = outputs_2[0]
+    def mutate(self, mutant, name, index):
+        mutant.name = name
+        amount = random.randint(0, 16)
 
-        error_layer_2 = np.array([actual_predict - expected_predict])
-        gradient_layer_2 = actual_predict * (1 - actual_predict)
-        weights_delta_layer_2 = error_layer_2 * gradient_layer_2
-        self.weights_1_2 -= (np.dot(weights_delta_layer_2, outputs_1.reshape(1, len(outputs_1)))) * self.learning_rate
+        for name, connection in mutant.connections.items():
+            changed = connection + connection * random.uniform(-index, index)
 
-        error_layer_1 = weights_delta_layer_2 * self.weights_1_2
-        gradient_layer_1 = outputs_1 * (1 - outputs_1)
-        weights_delta_layer_1 = error_layer_1 * gradient_layer_1
-        self.weights_0_1 -= np.dot(inputs.reshape(len(inputs), 1), weights_delta_layer_1).T  * self.learning_rate
+            mutant.connections[name] = changed
+
+            mutant.save()

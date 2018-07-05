@@ -65,16 +65,18 @@ all_static = pygame.sprite.Group()
 game_controller = GameController(game_screen, camera, all_mobs, all_items, all_static)
 
 game_map = MapObject('map_test', game_screen, game_controller, (50, 50), map_cell_size, 45, 25)
-game_map.create_map_from_file('test_map_2.txt')
+game_map.create_map_from_file('test_map_3.txt')
 
 mob_creator = MobCreator(game_screen, game_map, game_controller)
 item_creator = ItemCreator(game_screen, game_map, game_controller)
 
-mob_creator.create_goblin('first goblin', (1, 1), 5)
+mob_creator.create_goblin('first goblin', (41, 5), 3)
 mob_creator.create_goblin('second goblin', (19, 6), 3)
 mob_creator.create_goblin('third goblin', (37, 20), 3)
+mob_creator.create_goblin('fourth goblin', (30, 12), 3)
+mob_creator.create_goblin('fifth goblin', (8, 13), 3)
 
-for i in range(3, 12):
+for i in range(12, 20):
     item_creator.create_meat((i, 12))
 
 clock = pygame.time.Clock()
@@ -126,9 +128,15 @@ while not closeWindow:
     if game_controller.get_time() != second:
         game_controller.update_timer(second)
         game_controller.update_mobs_condition()
-        item_creator.generate_items_around((5, 5))
-        item_creator.generate_items_around((17, 7))
-        item_creator.generate_items_around((37, 20))
+        item_creator.generate_items_around((31, 11))
+        item_creator.generate_items_around((38, 6))
+        item_creator.generate_items_around((38, 18))
+        item_creator.generate_items_around((7, 18))
+        item_creator.generate_items_around((21, 12))
+
+    if game_controller.get_time() > 45:
+        game_controller.save_mobs_result()
+        closeWindow = True
 
     game_controller.update_mobs()
 
@@ -152,6 +160,12 @@ while not closeWindow:
                        'coords:      [' + str(int(focus.coord[0])) + ', ' + str(int(focus.coord[1])) + ']')
 
             view_label(game_screen, (25, view_y_with + 25),
+                       'destination: [' +
+                       str(int(focus.destination[0])) + ', ' +
+                       str(int(focus.destination[1])) + ']'
+                       )
+
+            view_label(game_screen, (600, view_y_with + 25),
                        'destination: [' +
                        str(int(focus.destination[0])) + ', ' +
                        str(int(focus.destination[1])) + ']'

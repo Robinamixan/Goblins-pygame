@@ -4,6 +4,7 @@ import copy
 
 from collections import OrderedDict
 from ConstantVariables import *
+from pathlib import Path
 
 
 class Network:
@@ -110,13 +111,13 @@ class Network:
     def convert_output(self):
         if len(self.layers['output'].shape) > 1:
             for (x, y), result in np.ndenumerate(self.layers['output']):
-                if result > 0.7:
+                if result > 0.6:
                     self.layers['output'][x][y] = 1
                 else:
                     self.layers['output'][x][y] = 0
         else:
             for x, result in np.ndenumerate(self.layers['output']):
-                if result > 0.7:
+                if result > 0.6:
                     self.layers['output'][x] = 1
                 else:
                     self.layers['output'][x] = 0
@@ -136,6 +137,14 @@ class Network:
             pickle.dump(copy.copy(self), output, -1)
 
     def load(self):
-        with open(networks_directory_save + 'Network_' + self.name + '.dump', 'rb') as input:
-            network = pickle.load(input)
-            return network
+        file = Path(networks_directory_save + 'Network_' + self.name + '.dump')
+        if file.exists():
+            with open(networks_directory_save + 'Network_' + self.name + '.dump', 'rb') as input:
+                network = pickle.load(input)
+                return network
+        else:
+            with open(networks_directory_save + 'Network_1.dump', 'rb') as input:
+                network = pickle.load(input)
+                network.name = self.name
+                # network.save()
+                return network

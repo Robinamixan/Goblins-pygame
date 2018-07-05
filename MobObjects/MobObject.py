@@ -1,9 +1,9 @@
 import math
 import copy
-# from main import remove_object_from_map
 
 from GameObject import *
 from InventoryObjects.InventoryObject import *
+from ItemObjects.ItemObject import *
 from ConstantVariables import *
 from Networks.Network import *
 
@@ -16,6 +16,8 @@ class MobObject(GameObject):
     action = 'w'
     stock = None
     inventory = None
+    food_network = None
+    waited_time = 0
 
     # Stats
     health = 0
@@ -38,6 +40,8 @@ class MobObject(GameObject):
         self.destination = [position[0], position[1]]
 
         self.inventory = InventoryObject(inventory_size)
+        self.food_network = Network(title, 8, 4)
+        self.food_network = self.food_network.load()
 
     # Getting current acts of mob
     def get_action(self):
@@ -140,6 +144,12 @@ class MobObject(GameObject):
         self.vectors[1] = 0
         if self.path:
             self.action = 'wait_clear'
+            if self.waited_time:
+                if self.game_controller.get_time() - self.waited_time > 2:
+                    self.path = []
+                    self.waited_time = 0
+            else:
+                self.waited_time = self.game_controller.get_time()
         elif self.action == 'get':
             items = copy.copy(cell.contain)
             items.pop(-1)
@@ -315,18 +325,17 @@ class MobObject(GameObject):
         if item.coord == self.destination:
             cell = self.get_destination_cell()
             items = copy.copy(cell.contain)
-            items.pop(-1)
             for item in items:
                 if self.catch_item(item):
                     self.game_controller.remove_item(item)
             return
 
         if item:
-            net = Network('1', 4, 4)
-            net = net.load()
-            data = [self.destination[0], self.destination[1], item.coord[0], item.coord[1], 0, 0, 0, 0]
-            net.activate(data)
-            actions = net.get_output(True)
+            info = self.get_info_around()
+            vector = self.convert_coords_to_vectors(self.destination, item.coord)
+            data = vector + info
+            self.food_network.activate(data)
+            actions = self.food_network.get_output(True)
 
             if actions[3] and actions[0]:
                 self.go_left_up()
@@ -354,6 +363,21 @@ class MobObject(GameObject):
                 self.go_left()
                 return
 
+    def convert_coords_to_vectors(self, start, end):
+        vector = [0, 0]
+        if end[0] > start[0]:
+            vector[0] = 1
+        else:
+            if end[0] < start[0]:
+                vector[0] = -1
+
+        if end[1] > start[1]:
+            vector[1] = 1
+        else:
+            if end[1] < start[1]:
+                vector[1] = -1
+        return vector
+
     def draw_path(self, cell_size):
         if self.path:
             for point in self.path:
@@ -363,10 +387,35 @@ class MobObject(GameObject):
                 self.screen.blit(image, [cell.x, cell.y])
 
     def catch_item(self, item):
-        return self.inventory.add_items(item, 1)
+        if isinstance(item, ItemObject):
+            return self.inventory.add_items(item, 1)
+        else:
+            return False
 
     def remove_item(self, item):
         return self.inventory.delete_items(item, 1)
 
     def get_inventory_info(self):
         return self.inventory.get_info()
+
+    def get_info_around(self):
+        x = self.destination[0]
+        y = self.destination[1]
+        info_map = []
+
+        info_map.append(self._set_info_by_cell(x - 1, y - 1))
+        info_map.append(self._set_info_by_cell(x, y + 1))
+        info_map.append(self._set_info_by_cell(x + 1, y - 1))
+        info_map.append(self._set_info_by_cell(x - 1, y))
+        info_map.append(self._set_info_by_cell(x + 1, y))
+        info_map.append(self._set_info_by_cell(x - 1, y + 1))
+        info_map.append(self._set_info_by_cell(x, y + 1))
+        info_map.append(self._set_info_by_cell(x + 1, y + 1))
+
+        return info_map
+
+    def _set_info_by_cell(self, x, y):
+        if self.get_cell(x, y).is_can_move(self):
+            return 0
+        else:
+            return 1

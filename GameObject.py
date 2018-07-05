@@ -44,7 +44,7 @@ class GameObject(pygame.sprite.Sprite):
     def get_current_cell(self):
         return self.get_cell(self.coord[0], self.coord[1])
 
-    def get_cell(self, x , y):
+    def get_cell(self, x, y):
         return self.map.get_cell(x, y)
 
     def set_stat(self, stat, value):
