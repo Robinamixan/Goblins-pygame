@@ -109,8 +109,11 @@ class CellObject:
     def is_empty(self):
         return not self.contain
 
+    def is_passable(self):
+        return self.passable
+
     def is_can_move(self, moved_object):
-        if self.passable:
+        if self.is_passable():
             return True
         else:
             if moved_object == self.contain:
