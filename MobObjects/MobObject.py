@@ -1,10 +1,11 @@
 import math
 import copy
-# from main import remove_object_from_map
 
 from GameObject import *
 from InventoryObjects.InventoryObject import *
+from ItemObjects.ItemObject import *
 from ConstantVariables import *
+from Networks.Network import *
 
 
 class MobObject(GameObject):
@@ -15,13 +16,21 @@ class MobObject(GameObject):
     action = 'w'
     stock = None
     inventory = None
+    food_network = None
+    waited_time = 0
+
+    # Stats
+    health = 0
+    satiety = 0
+    passable = False
+    # Stats END
 
     def __init__(self, title, screen, game_controller, game_map, position, size, speed=1, image_path='', inventory_size=0):
         super().__init__(title, screen, game_controller, game_map, position, size, white)
         self.speed = speed
 
         cell = self.get_current_cell()
-        cell.set_object(self, False)
+        cell.set_object(self, self.passable)
 
         self.rect.x = cell.x
         self.rect.y = cell.y
@@ -31,6 +40,8 @@ class MobObject(GameObject):
         self.destination = [position[0], position[1]]
 
         self.inventory = InventoryObject(inventory_size)
+        self.food_network = Network(title, 8, 4)
+        self.food_network = self.food_network.load()
 
     # Getting current acts of mob
     def get_action(self):
@@ -112,6 +123,18 @@ class MobObject(GameObject):
     def go_down(self):
         self.set_destination(self.destination[0], self.destination[1] + 1)
 
+    def go_left_up(self):
+        self.set_destination(self.destination[0] - 1, self.destination[1] - 1)
+
+    def go_left_down(self):
+        self.set_destination(self.destination[0] - 1, self.destination[1] + 1)
+
+    def go_right_up(self):
+        self.set_destination(self.destination[0] + 1, self.destination[1] - 1)
+
+    def go_right_down(self):
+        self.set_destination(self.destination[0] + 1, self.destination[1] + 1)
+
     # Stops mob on his current cell
     def stop(self):
         cell = self.get_destination_cell()
@@ -121,12 +144,17 @@ class MobObject(GameObject):
         self.vectors[1] = 0
         if self.path:
             self.action = 'wait_clear'
+            if self.waited_time:
+                if self.game_controller.get_time() - self.waited_time > 2:
+                    self.path = []
+                    self.waited_time = 0
+            else:
+                self.waited_time = self.game_controller.get_time()
         elif self.action == 'get':
             items = copy.copy(cell.contain)
             items.pop(-1)
             for item in items:
                 if self.catch_item(item):
-                    cell.remove_object(item)
                     self.game_controller.remove_item(item)
             self.action = 'wait'
         else:
@@ -140,6 +168,7 @@ class MobObject(GameObject):
                 self.update_move()
         else:
             self.stop()
+            self.update_self_task()
 
     def go_to_next_step(self):
         next_step = self.path[0]
@@ -220,14 +249,14 @@ class MobObject(GameObject):
         step_x = self.speed * step * self.vectors[0]
         step_y = self.speed * step * self.vectors[1]
         if step_x > 0:
-            self.rect.x = self.rect.x + math.ceil(step_x)
+            self.rect.x += math.ceil(step_x)
         else:
-            self.rect.x = self.rect.x + math.floor(step_x)
+            self.rect.x += math.floor(step_x)
 
         if step_y > 0:
-            self.rect.y = self.rect.y + math.ceil(step_y)
+            self.rect.y += math.ceil(step_y)
         else:
-            self.rect.y = self.rect.y + math.floor(step_y)
+            self.rect.y += math.floor(step_y)
 
     def is_destination_x(self, cell):
         if self.destination[0] > self.coord[0]:
@@ -249,6 +278,106 @@ class MobObject(GameObject):
 
         return False
 
+    def update_mob_condition(self):
+        if self.satiety <= 0:
+            self.health -= 10
+            if self.health <= 0:
+                self.game_controller.remove_mob(self)
+        else:
+            self.satiety -= 10
+
+    def update_self_task(self):
+        if self.satiety < 50:
+            ate = self.eat_full()
+            if not ate:
+                self.find_food()
+
+    def eat(self):
+        info = self.inventory.get_info()
+        for index, item in info['items'].items():
+            if item['amount']:
+                if item['object'].get_edible():
+                    self.remove_item(item['object'])
+                    self.satiety += item['object'].get_stat('satiety')
+                    return True
+
+        return False
+
+    def eat_full(self):
+        ate = False
+        info = self.inventory.get_info()
+        for index, item in info['items'].items():
+            if item['amount']:
+                if item['object'].get_edible():
+                    while self.satiety < 100 and item['amount'] > 0:
+                        self.remove_item(item['object'])
+                        self.satiety += item['object'].get_stat('satiety')
+                        item['amount'] -= 1
+                        if self.satiety >= 100:
+                            break
+                    ate = True
+
+        return ate
+
+    def find_food(self):
+        item = self.game_controller.get_nearest_item(self.destination)
+
+        if item.coord == self.destination:
+            cell = self.get_destination_cell()
+            items = copy.copy(cell.contain)
+            for item in items:
+                if self.catch_item(item):
+                    self.game_controller.remove_item(item)
+            return
+
+        if item:
+            info = self.get_info_around()
+            vector = self.convert_coords_to_vectors(self.destination, item.coord)
+            data = vector + info
+            self.food_network.activate(data)
+            actions = self.food_network.get_output(True)
+
+            if actions[3] and actions[0]:
+                self.go_left_up()
+                return
+            if actions[3] and actions[2]:
+                self.go_left_down()
+                return
+            if actions[1] and actions[0]:
+                self.go_right_up()
+                return
+            if actions[1] and actions[2]:
+                self.go_right_down()
+                return
+
+            if actions[0]:
+                self.go_up()
+                return
+            if actions[1]:
+                self.go_right()
+                return
+            if actions[2]:
+                self.go_down()
+                return
+            if actions[3]:
+                self.go_left()
+                return
+
+    def convert_coords_to_vectors(self, start, end):
+        vector = [0, 0]
+        if end[0] > start[0]:
+            vector[0] = 1
+        else:
+            if end[0] < start[0]:
+                vector[0] = -1
+
+        if end[1] > start[1]:
+            vector[1] = 1
+        else:
+            if end[1] < start[1]:
+                vector[1] = -1
+        return vector
+
     def draw_path(self, cell_size):
         if self.path:
             for point in self.path:
@@ -258,7 +387,35 @@ class MobObject(GameObject):
                 self.screen.blit(image, [cell.x, cell.y])
 
     def catch_item(self, item):
-        return self.inventory.add_items(item, 1)
+        if isinstance(item, ItemObject):
+            return self.inventory.add_items(item, 1)
+        else:
+            return False
+
+    def remove_item(self, item):
+        return self.inventory.delete_items(item, 1)
 
     def get_inventory_info(self):
         return self.inventory.get_info()
+
+    def get_info_around(self):
+        x = self.destination[0]
+        y = self.destination[1]
+        info_map = []
+
+        info_map.append(self._set_info_by_cell(x - 1, y - 1))
+        info_map.append(self._set_info_by_cell(x, y + 1))
+        info_map.append(self._set_info_by_cell(x + 1, y - 1))
+        info_map.append(self._set_info_by_cell(x - 1, y))
+        info_map.append(self._set_info_by_cell(x + 1, y))
+        info_map.append(self._set_info_by_cell(x - 1, y + 1))
+        info_map.append(self._set_info_by_cell(x, y + 1))
+        info_map.append(self._set_info_by_cell(x + 1, y + 1))
+
+        return info_map
+
+    def _set_info_by_cell(self, x, y):
+        if self.get_cell(x, y).is_can_move(self):
+            return 0
+        else:
+            return 1

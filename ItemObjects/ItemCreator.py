@@ -1,4 +1,5 @@
 from ItemObjects.ItemObject import *
+import random
 
 
 class ItemCreator:
@@ -12,10 +13,25 @@ class ItemCreator:
         self.game_controller = game_controller
 
     def create_meat(self, position):
-        return ItemObject('meat_1', self.screen, self.game_controller, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
+        item = ItemObject('meat', self.screen, self.game_controller, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
+        item.set_edible(True)
+        item.set_stat('satiety', 15)
 
-    def create_meat_1(self, position):
-        return ItemObject('meat_2', self.screen, self.game_controller, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
+        self.game_controller.add_item(item)
+        return item
 
-    def create_meat_2(self, position):
-        return ItemObject('meat_3', self.screen, self.game_controller, self.map, position, (1, 1), 'Images/meat_alpha_1.1.png')
+    def generate_items_around(self, point, radius=2, speed=2):
+        if self.game_controller.get_time() % speed == 0:
+            rand_x = random.randint((-1) * radius, radius)
+            rand_y = random.randint((-1) * radius, radius)
+            cell = self.get_cell(rand_x, rand_y)
+
+            while not cell.is_passable():
+                rand_x = random.randint((-1) * radius, radius)
+                rand_y = random.randint((-1) * radius, radius)
+                cell = self.get_cell(rand_x, rand_y)
+
+            self.create_meat((point[0] + rand_x, point[1] + rand_y))
+
+    def get_cell(self, x, y):
+        return self.map.get_cell(x, y)

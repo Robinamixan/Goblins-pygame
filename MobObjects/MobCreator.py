@@ -12,5 +12,10 @@ class MobCreator:
         self.game_controller = game_controller
 
     def create_goblin(self, name, position, speed):
-        return MobObject(name, self.screen, self.game_controller, self.map, position, (1, 1), speed, 'Images/goblin_alpha_1.1.png', 2)
+        gob = MobObject(name, self.screen, self.game_controller, self.map, position, (1, 1), speed, 'Images/goblin_alpha_1.1.png', 2)
+        gob.set_stat('health', 150)
+        gob.set_stat('satiety', 100)
+
+        self.game_controller.add_mob(gob)
+        return gob
 

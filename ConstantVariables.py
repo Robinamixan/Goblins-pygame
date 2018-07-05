@@ -1,5 +1,5 @@
-screen_size = (850, 700)
-fps = 30
+screen_size = (1500, 1000)
+fps = 60
 white = (255, 255, 255)
 black = (0, 0, 0)
 blue = (0, 0, 255)
@@ -8,3 +8,4 @@ dark_green = (168, 204, 85)
 red = (255, 0, 0, 125)
 brow = (175, 55, 0)
 map_cell_size = 25
+networks_directory_save = 'Networks/Saves/'
